@@ -378,8 +378,9 @@ textarea{
   line-height:1.65;
   color:#4b5563;
   font-size:17px;
-  width:90%;
-  margin:0 auto;
+  width:100%;
+  margin:0;
+  text-align:left;
 }
 
 
@@ -568,8 +569,9 @@ textarea{
 
   .body{
     font-size:17px;
-    width:90%;
-    margin:0 auto;
+    width:100%;
+    margin:0;
+    text-align:left;
   }
 
   .title{
@@ -2449,14 +2451,7 @@ function render(){
 
 
 
-                <div class="body">
-
-                  ${highlight(
-                    item.content,
-                    keyword
-                  )}
-
-                </div>
+                <div class="body">${highlight(item.content, keyword)}</div>
 
 
 
