@@ -911,6 +911,15 @@ textarea{
   line-height:1.6;
 }
 
+.parking-lock-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:4px 0 10px;}
+.parking-lock-button{min-height:40px;padding:8px 12px;border:1px solid #818cf8;border-radius:9px;background:#fff;color:#3730a3;font-size:13px;font-weight:600;cursor:pointer;}
+.parking-lock-button[aria-pressed="true"]{background:#e0e7ff;}
+.parking-lock-button:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
+.parking-lock-button:disabled{opacity:.6;cursor:wait;}
+.parking-lock-hint{color:#475569;font-size:12px;}
+.parking-step:has(input:disabled){cursor:default;}
+.parking-step input[type="checkbox"]:disabled{cursor:not-allowed;}
+
 .parking-progress{
   display:inline-block;
   margin-left:6px;
@@ -1510,6 +1519,7 @@ let selectedStatus = "";
 
 const PARKING_STEPS = ["線上查詢是否未繳停車費","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
 const parkingPendingIds = new Set();
+const parkingUnlockedIds = new Set();
 
 function normalizeParkingSteps(steps){
   return PARKING_STEPS.map((_, index) => steps?.[index] === true);
@@ -2708,7 +2718,10 @@ function clearSearch(){
    Render
 ========================================================= */
 
-function render(){
+function render(options = {}){
+  if(options.preserveWorkflowUnlocks !== true){
+    parkingUnlockedIds.clear();
+  }
 
   const keyword =
     searchInput.value.trim();
@@ -2994,11 +3007,19 @@ function render(){
                 ${item.category === "停車費" ? `
                   <fieldset class="parking-workflow">
                     <legend>停車費工作流程<span class="parking-progress">${normalizeParkingSteps(item.parkingWorkflow).filter(Boolean).length} / 3</span></legend>
+                    <div class="parking-lock-row">
+                      <button type="button" class="parking-lock-button" data-parking-lock
+                        aria-pressed="${parkingUnlockedIds.has(String(item.id))}"
+                        ${parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
+                        ${parkingUnlockedIds.has(String(item.id)) ? "🔒 完成並鎖定" : "🔓 解鎖修改"}
+                      </button>
+                      <span class="parking-lock-hint">${parkingUnlockedIds.has(String(item.id)) ? "修改會即時儲存，完成後請鎖定。" : "已鎖定，先解鎖才能勾選或取消。"}</span>
+                    </div>
                     ${PARKING_STEPS.map((step, index) => `
                       <label class="parking-step">
                         <input type="checkbox" data-parking-step="${index}"
                           ${normalizeParkingSteps(item.parkingWorkflow)[index] ? "checked" : ""}
-                          ${parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
+                          ${!parkingUnlockedIds.has(String(item.id)) || parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
                         <span>${index + 1}. ${esc(step)}</span>
                       </label>
                     `).join("")}
@@ -3306,7 +3327,7 @@ function renderKeepingEntryState(){
       .map(entry => [entry.dataset.workId, entry.open])
   );
   const scrollTop = window.scrollY;
-  render();
+  render({preserveWorkflowUnlocks:true});
   content.querySelectorAll(".work-entry[data-work-id]").forEach(entry => {
     if(openEntries.has(entry.dataset.workId)){
       entry.open = openEntries.get(entry.dataset.workId);
@@ -3315,6 +3336,44 @@ function renderKeepingEntryState(){
   window.scrollTo({top:scrollTop, behavior:"instant"});
 }
 
+function refreshParkingLock(entry){
+  const id = entry.dataset.workId;
+  const unlocked = parkingUnlockedIds.has(id);
+  const pending = parkingPendingIds.has(id);
+  entry.querySelectorAll("[data-parking-step]").forEach(input => {
+    input.disabled = !unlocked || pending;
+  });
+  const button = entry.querySelector("[data-parking-lock]");
+  if(button){
+    button.disabled = pending;
+    button.setAttribute("aria-pressed", String(unlocked));
+    button.textContent = unlocked ? "🔒 完成並鎖定" : "🔓 解鎖修改";
+  }
+  const hint = entry.querySelector(".parking-lock-hint");
+  if(hint) hint.textContent = unlocked
+    ? "修改會即時儲存，完成後請鎖定。"
+    : "已鎖定，先解鎖才能勾選或取消。";
+}
+
+content.addEventListener("click", event => {
+  const button = event.target.closest("[data-parking-lock]");
+  if(!button) return;
+  const entry = button.closest(".work-entry");
+  const id = entry.dataset.workId;
+  if(parkingPendingIds.has(id)) return;
+  if(parkingUnlockedIds.has(id)) parkingUnlockedIds.delete(id);
+  else parkingUnlockedIds.add(id);
+  refreshParkingLock(entry);
+});
+
+content.addEventListener("toggle", event => {
+  const entry = event.target;
+  if(entry.matches(".work-entry") && !entry.open){
+    parkingUnlockedIds.delete(entry.dataset.workId);
+    refreshParkingLock(entry);
+  }
+}, true);
+
 content.addEventListener("change", async event => {
   const checkbox = event.target.closest("[data-parking-step]");
   if(!checkbox || !currentUser) return;
@@ -3322,6 +3381,12 @@ content.addEventListener("change", async event => {
   const id = entry.dataset.workId;
   const item = works.find(work => String(work.id) === id);
   if(!item || item.category !== "停車費" || parkingPendingIds.has(id)) return;
+
+  if(!parkingUnlockedIds.has(id)){
+    checkbox.checked = normalizeParkingSteps(item.parkingWorkflow)[Number(checkbox.dataset.parkingStep)] || false;
+    refreshParkingLock(entry);
+    return;
+  }
 
   const previousSteps = normalizeParkingSteps(item.parkingWorkflow);
   const nextSteps = [...previousSteps];
@@ -3332,9 +3397,7 @@ content.addEventListener("change", async event => {
   const savingUserId = currentUser.id;
 
   parkingPendingIds.add(id);
-  entry.querySelectorAll("[data-parking-step]").forEach(input => {
-    input.disabled = true;
-  });
+  refreshParkingLock(entry);
 
   let saveError = null;
   try{
@@ -3348,9 +3411,11 @@ content.addEventListener("change", async event => {
     if(currentUser?.id === savingUserId){
       item.parkingWorkflow = nextSteps;
       item.status = nextStatus;
+      if(nextStatus === "已完成") parkingUnlockedIds.delete(id);
     }
   }catch(error){
     saveError = error;
+    parkingUnlockedIds.delete(id);
   }finally{
     parkingPendingIds.delete(id);
     if(currentUser?.id === savingUserId){
