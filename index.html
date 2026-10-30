@@ -317,12 +317,52 @@ textarea{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  gap:10px;
+  padding:14px;
+  background:#fff;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  cursor:pointer;
+  list-style:none;
+}
+
+.date-head::-webkit-details-marker{
+  display:none;
+}
+
+.date-head::before{
+  content:"▶";
+  color:#475569;
+  font-size:12px;
+  flex-shrink:0;
+}
+
+.date-section[open] > .date-head{
   margin-bottom:10px;
+}
+
+.date-section[open] > .date-head::before{
+  transform:rotate(90deg);
+}
+
+.date-head:hover{
+  background:#f8fafc;
+}
+
+.date-head:focus-visible{
+  outline:3px solid #2563eb;
+  outline-offset:3px;
 }
 
 .date-head h2{
   font-size:18px;
   margin:0;
+  flex:1;
+  min-width:0;
+}
+
+.date-head .badge{
+  flex-shrink:0;
 }
 
 .badge{
@@ -2242,6 +2282,9 @@ function render(){
   const selectedDate =
     searchDate.value;
 
+  const isSearching =
+    Boolean(keyword || selectedCategory || selectedDate);
+
 
   const filtered =
     works.filter(
@@ -2416,9 +2459,9 @@ function render(){
 
         html += `
 
-          <section class="date-section">
+          <details class="date-section" ${isSearching ? "open" : ""}>
 
-            <div class="date-head">
+            <summary class="date-head" title="點選展開或收合當日紀錄">
 
               <h2>
                 📅 ${formatDate(date)}
@@ -2428,7 +2471,7 @@ function render(){
                 ${groups[date].length} 筆
               </span>
 
-            </div>
+            </summary>
 
         `;
 
@@ -2544,7 +2587,7 @@ function render(){
 
         html += `
 
-          </section>
+          </details>
 
         `;
 
