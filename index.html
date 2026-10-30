@@ -2675,6 +2675,19 @@ searchCategory.addEventListener(
 
 /* 日期搜尋 */
 
+// 點擊日期欄位任一處，直接開啟瀏覽器日曆。
+searchDate.addEventListener("click", event => {
+  if(typeof searchDate.showPicker === "function"){
+    try{
+      searchDate.showPicker();
+      // 避免點擊日曆圖示時，瀏覽器再切換一次開關。
+      event.preventDefault();
+    }catch(error){
+      // 不支援程式開啟日曆時，保留原生日期選擇操作。
+    }
+  }
+});
+
 searchDate.addEventListener(
   "change",
   render
