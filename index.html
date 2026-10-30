@@ -862,6 +862,63 @@ textarea{
   resize:vertical;
 }
 
+.parking-workflow{
+  margin:0 0 16px;
+  padding:14px;
+  border:1px solid #a5b4fc;
+  border-radius:12px;
+  background:#eef2ff;
+  min-width:0;
+}
+
+.parking-workflow[hidden]{ display:none; }
+
+.parking-workflow legend{
+  padding:0 5px;
+  font-size:14px;
+  font-weight:700;
+  color:#3730a3;
+}
+
+.parking-step{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:10px 0;
+  font-size:14px;
+  line-height:1.6;
+  color:#334155;
+  cursor:pointer;
+}
+
+.parking-step input[type="checkbox"]{
+  width:19px;
+  height:19px;
+  margin:2px 0 0;
+  flex-shrink:0;
+  accent-color:#2563eb;
+  cursor:pointer;
+}
+
+.parking-step input:checked + span{
+  color:#166534;
+}
+
+.parking-help{
+  margin:8px 0 0;
+  font-size:12px;
+  color:#475569;
+  line-height:1.6;
+}
+
+.parking-progress{
+  display:inline-block;
+  margin-left:6px;
+  font-size:12px;
+  font-weight:600;
+  color:#4338ca;
+}
+
 .modal-actions{
   display:flex;
   gap:10px;
@@ -1356,6 +1413,14 @@ textarea{
       </select>
     </div>
 
+    <fieldset id="parkingWorkflowInput" class="parking-workflow" hidden>
+      <legend>停車費工作流程</legend>
+      <label class="parking-step"><input type="checkbox" data-modal-parking-step="0"><span>1. 線上查詢是否未繳停車費</span></label>
+      <label class="parking-step"><input type="checkbox" data-modal-parking-step="1"><span>2. 鉛筆寫上 姓名 單位地點</span></label>
+      <label class="parking-step"><input type="checkbox" data-modal-parking-step="2"><span>3. 罰單正本繳交佩君</span></label>
+      <p class="parking-help">勾選三項後，工作進度會自動改為「已完成」。</p>
+    </fieldset>
+
     <div class="group">
 
       <label>
@@ -1443,6 +1508,28 @@ let currentUser = null;
 
 let selectedStatus = "";
 
+const PARKING_STEPS = ["線上查詢是否未繳停車費","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
+const parkingPendingIds = new Set();
+
+function normalizeParkingSteps(steps){
+  return PARKING_STEPS.map((_, index) => steps?.[index] === true);
+}
+
+function parkingStepStatus(steps){
+  const checked = normalizeParkingSteps(steps);
+  return checked.every(Boolean) ? "已完成"
+    : checked.some(Boolean) ? "處理中" : "未處理";
+}
+
+function parkingPayload(steps){
+  const checked = normalizeParkingSteps(steps);
+  return {
+    parking_checked_online:checked[0],
+    parking_written_details:checked[1],
+    parking_submitted_original:checked[2]
+  };
+}
+
 const WORK_STATUSES = ["未處理", "處理中", "已完成"];
 
 function normalizeStatus(value){
@@ -1522,6 +1609,25 @@ const categoryInput =
   document.getElementById("categoryInput");
 
 const statusInput = document.getElementById("statusInput");
+const parkingWorkflowInput = document.getElementById("parkingWorkflowInput");
+
+function modalParkingSteps(){
+  return [...parkingWorkflowInput.querySelectorAll("input[type=checkbox]")]
+    .map(input => input.checked);
+}
+
+function setModalParkingSteps(steps){
+  const checked = normalizeParkingSteps(steps);
+  parkingWorkflowInput.querySelectorAll("input[type=checkbox]")
+    .forEach((input, index) => { input.checked = checked[index]; });
+}
+
+function updateParkingVisibility(){
+  parkingWorkflowInput.hidden = categoryInput.value !== "停車費";
+  if(!parkingWorkflowInput.hidden && modalParkingSteps().every(Boolean)){
+    statusInput.value = "已完成";
+  }
+}
 
 const contentInput =
   document.getElementById("contentInput");
@@ -1998,6 +2104,12 @@ async function loadWorks(){
 
         status:normalizeStatus(item.status),
 
+        parkingWorkflow:[
+          item.parking_checked_online === true,
+          item.parking_written_details === true,
+          item.parking_submitted_original === true
+        ],
+
         content:item.content,
 
         createdAt:item.created_at
@@ -2261,6 +2373,7 @@ function openModal(id=null){
       item.category || "其他";
 
     statusInput.value = normalizeStatus(item.status);
+    setModalParkingSteps(item.parkingWorkflow);
 
 
     contentInput.value =
@@ -2285,6 +2398,7 @@ function openModal(id=null){
       "驗車";
 
     statusInput.value = "未處理";
+    setModalParkingSteps([false, false, false]);
 
 
     contentInput.value =
@@ -2292,6 +2406,8 @@ function openModal(id=null){
 
   }
 
+
+  updateParkingVisibility();
 
   modalBg.classList.add(
     "show"
@@ -2343,7 +2459,11 @@ async function saveWork(){
   const category =
     categoryInput.value;
 
-  const status = normalizeStatus(statusInput.value);
+  const parkingSteps = category === "停車費"
+    ? modalParkingSteps() : [false, false, false];
+
+  const status = category === "停車費" && parkingSteps.every(Boolean)
+    ? "已完成" : normalizeStatus(statusInput.value);
 
   const workContent =
     contentInput.value.trim();
@@ -2394,6 +2514,8 @@ async function saveWork(){
           status:
             status,
 
+          ...parkingPayload(parkingSteps),
+
           content:
             workContent
 
@@ -2433,6 +2555,8 @@ async function saveWork(){
 
           status:
             status,
+
+          ...parkingPayload(parkingSteps),
 
           content:
             workContent
@@ -2839,7 +2963,7 @@ function render(){
 
             html += `
 
-              <details class="card work-entry" ${isSearching || dateIndex === 0 ? "open" : ""}>
+              <details class="card work-entry" data-work-id="${esc(String(item.id))}" ${isSearching || dateIndex === 0 ? "open" : ""}>
                 <summary class="entry-head" title="點選標題展開或收合內容">
                   <span class="tag status-tag" data-status="${normalizeStatus(item.status)}">${normalizeStatus(item.status)}</span>
                   <span class="entry-text">
@@ -2866,6 +2990,21 @@ function render(){
 
 
 
+
+                ${item.category === "停車費" ? `
+                  <fieldset class="parking-workflow">
+                    <legend>停車費工作流程<span class="parking-progress">${normalizeParkingSteps(item.parkingWorkflow).filter(Boolean).length} / 3</span></legend>
+                    ${PARKING_STEPS.map((step, index) => `
+                      <label class="parking-step">
+                        <input type="checkbox" data-parking-step="${index}"
+                          ${normalizeParkingSteps(item.parkingWorkflow)[index] ? "checked" : ""}
+                          ${parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
+                        <span>${index + 1}. ${esc(step)}</span>
+                      </label>
+                    `).join("")}
+                    <p class="parking-help">勾選後自動儲存，三項完成會自動標為「已完成」。</p>
+                  </fieldset>
+                ` : ""}
 
                 <div class="body">${highlight(item.content, keyword)}</div>
 
@@ -3149,6 +3288,83 @@ authPassword.addEventListener(
 
   }
 );
+
+
+/* 停車費流程：表單隨分類顯示，首頁勾選即儲存。 */
+
+categoryInput.addEventListener("change", updateParkingVisibility);
+
+parkingWorkflowInput.addEventListener("change", () => {
+  if(categoryInput.value === "停車費"){
+    statusInput.value = parkingStepStatus(modalParkingSteps());
+  }
+});
+
+function renderKeepingEntryState(){
+  const openEntries = new Map(
+    [...content.querySelectorAll(".work-entry[data-work-id]")]
+      .map(entry => [entry.dataset.workId, entry.open])
+  );
+  const scrollTop = window.scrollY;
+  render();
+  content.querySelectorAll(".work-entry[data-work-id]").forEach(entry => {
+    if(openEntries.has(entry.dataset.workId)){
+      entry.open = openEntries.get(entry.dataset.workId);
+    }
+  });
+  window.scrollTo({top:scrollTop, behavior:"instant"});
+}
+
+content.addEventListener("change", async event => {
+  const checkbox = event.target.closest("[data-parking-step]");
+  if(!checkbox || !currentUser) return;
+  const entry = checkbox.closest(".work-entry");
+  const id = entry.dataset.workId;
+  const item = works.find(work => String(work.id) === id);
+  if(!item || item.category !== "停車費" || parkingPendingIds.has(id)) return;
+
+  const previousSteps = normalizeParkingSteps(item.parkingWorkflow);
+  const nextSteps = [...previousSteps];
+  const index = Number(checkbox.dataset.parkingStep);
+  if(!Number.isInteger(index) || index < 0 || index >= PARKING_STEPS.length) return;
+  nextSteps[index] = checkbox.checked;
+  const nextStatus = parkingStepStatus(nextSteps);
+  const savingUserId = currentUser.id;
+
+  parkingPendingIds.add(id);
+  entry.querySelectorAll("[data-parking-step]").forEach(input => {
+    input.disabled = true;
+  });
+
+  let saveError = null;
+  try{
+    const {error} = await supabaseClient.from("work_diary")
+      .update({...parkingPayload(nextSteps), status:nextStatus})
+      .eq("id", item.id)
+      .eq("user_id", savingUserId)
+      .select("id")
+      .single();
+    if(error) throw error;
+    if(currentUser?.id === savingUserId){
+      item.parkingWorkflow = nextSteps;
+      item.status = nextStatus;
+    }
+  }catch(error){
+    saveError = error;
+  }finally{
+    parkingPendingIds.delete(id);
+    if(currentUser?.id === savingUserId){
+      renderKeepingEntryState();
+      const input = [...content.querySelectorAll(".work-entry[data-work-id]")]
+        .find(row => row.dataset.workId === id)
+        ?.querySelector('[data-parking-step="' + index + '"]');
+      input?.focus({preventScroll:true});
+    }
+  }
+  if(saveError){
+    alert("流程儲存失敗，已還原勾選狀態：\n" + (saveError.message || "請稍後再試"));
+  }
+});
 
 
 /* 工作進度篩選，可與關鍵字、分類及日期條件一起使用。 */
