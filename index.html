@@ -306,7 +306,51 @@ textarea{
 ========================= */
 
 .content{
-  padding:0 16px 40px;
+  padding:0 16px 100px;
+}
+
+.back-to-top{
+  position:fixed;
+  right:max(16px, calc((100vw - 980px) / 2 - 68px));
+  bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:52px;
+  height:52px;
+  padding:0;
+  border:1px solid #1d4ed8;
+  border-radius:18px;
+  background:linear-gradient(145deg,#2563eb,#1d4ed8);
+  color:#fff;
+  box-shadow:0 6px 18px #1d4ed84d;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+
+.back-to-top:hover{
+  transform:translateY(-3px);
+  box-shadow:0 9px 22px #1d4ed866;
+}
+
+.back-to-top:focus-visible{
+  outline:3px solid #1e3a8a;
+  outline-offset:4px;
+}
+
+.back-to-top svg{
+  width:25px;
+  height:25px;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .back-to-top{
+    transition:none;
+  }
+  .back-to-top:hover{
+    transform:none;
+  }
 }
 
 .date-section{
@@ -1020,6 +1064,20 @@ textarea{
     class="content"
     id="content"
   ></main>
+
+  <button
+    type="button"
+    id="backToTopBtn"
+    class="back-to-top"
+    aria-label="返回最上方"
+    title="返回最上方"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true" focusable="false">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
 
 </div>
 
@@ -2868,6 +2926,18 @@ authPassword.addEventListener(
 
   }
 );
+
+
+/* 返回最上方 */
+
+document.getElementById("backToTopBtn").addEventListener("click", () => {
+  window.scrollTo({
+    top:0,
+    behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "instant"
+      : "smooth"
+  });
+});
 
 
 /* 啟動 */
