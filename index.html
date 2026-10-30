@@ -912,7 +912,7 @@ textarea{
     <div class="group">
 
       <label>
-        📅 日期
+        📅 日期（留空使用今天）
       </label>
 
       <input
@@ -926,7 +926,7 @@ textarea{
     <div class="group">
 
       <label>
-        📝 工作標題
+        📝 工作標題（與工作內容擇一填寫）
       </label>
 
       <input
@@ -964,7 +964,7 @@ textarea{
     <div class="group">
 
       <label>
-        📋 工作內容
+        📋 工作內容（與標題擇一填寫）
       </label>
 
       <textarea
@@ -1924,7 +1924,7 @@ async function saveWork(){
 
 
   const workDate =
-    dateInput.value;
+    dateInput.value || getToday();
 
   const title =
     titleInput.value.trim();
@@ -1936,14 +1936,10 @@ async function saveWork(){
     contentInput.value.trim();
 
 
-  if(
-    !workDate ||
-    !title ||
-    !workContent
-  ){
+  if(!title && !workContent){
 
     alert(
-      "請至少填寫日期、工作標題與工作內容"
+      "工作標題或工作內容，至少填寫一項即可"
     );
 
     return;
