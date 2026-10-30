@@ -358,6 +358,10 @@ textarea{
 }
 
 .date-head{
+  width:100%;
+  text-align:left;
+  font-family:inherit;
+  color:inherit;
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
@@ -382,11 +386,11 @@ textarea{
   margin-top:5px;
 }
 
-.date-section[open] > .date-head{
+.date-head[aria-expanded="true"]{
   margin-bottom:10px;
 }
 
-.date-section[open] > .date-head::before{
+.date-head[aria-expanded="true"]::before{
   transform:rotate(90deg);
 }
 
@@ -410,25 +414,9 @@ textarea{
   gap:10px;
 }
 
-.date-titles{
-  margin:10px 0 0;
-  padding-left:20px;
-  color:#334155;
-  font-size:14px;
-  line-height:1.6;
-  overflow-wrap:anywhere;
-}
-
-.date-titles li + li{
-  margin-top:4px;
-}
-
-.date-section[open] .date-titles{
-  display:none;
-}
-
-.date-head h2{
+.date-head .date-label{
   font-size:18px;
+  font-weight:700;
   margin:0;
   flex:1;
   min-width:0;
@@ -454,6 +442,62 @@ textarea{
   margin-bottom:10px;
   box-shadow:0 2px 5px #00000008;
 }
+
+.work-entry{ padding:0; }
+
+.entry-head{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:12px 14px;
+  cursor:pointer;
+  list-style:none;
+  color:#1e3a8a;
+  font-size:15px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.entry-head::-webkit-details-marker{ display:none; }
+
+.entry-head::before{
+  content:"▶";
+  color:#475569;
+  font-size:10px;
+  flex-shrink:0;
+}
+
+.work-entry[open] > .entry-head::before{ transform:rotate(90deg); }
+
+.entry-head:hover{
+  background:#eff6ff;
+  border-radius:12px;
+}
+
+.entry-head:focus-visible{
+  outline:3px solid #2563eb;
+  outline-offset:2px;
+  border-radius:12px;
+}
+
+.work-entry:not([open]){
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+  margin-bottom:2px;
+}
+
+.work-entry:not([open]) > .entry-head{
+  padding-top:6px;
+  padding-bottom:6px;
+}
+
+.work-entry[open] > .entry-head{
+  font-weight:700;
+  border-bottom:1px solid #e5e7eb;
+}
+
+.entry-content{ padding:14px 16px 16px; }
 
 .meta{
   font-size:12px;
@@ -2544,26 +2588,17 @@ function render(){
 
         html += `
 
-          <details class="date-section" ${isSearching || dateIndex === 0 ? "open" : ""}>
-
-            <summary class="date-head" title="點選展開或收合當日紀錄">
-
-              <div class="date-summary">
-
-                <div class="date-heading">
-                  <h2>📅 ${formatDate(date)}</h2>
+          <section class="date-section">
+            <button type="button" class="date-head" data-date-toggle
+              aria-expanded="${isSearching || dateIndex === 0}"
+              title="點選展開或收合當日全部紀錄">
+              <span class="date-summary">
+                <span class="date-heading">
+                  <span class="date-label">📅 ${formatDate(date)}</span>
                   <span class="badge">${groups[date].length} 筆</span>
-                </div>
-
-                <ul class="date-titles">
-                  ${groups[date].map(item =>
-                    `<li>${esc(item.title || "未填標題")}</li>`
-                  ).join("")}
-                </ul>
-
-              </div>
-
-            </summary>
+                </span>
+              </span>
+            </button>
 
         `;
 
@@ -2604,7 +2639,11 @@ function render(){
 
             html += `
 
-              <article class="card">
+              <details class="card work-entry" ${isSearching || dateIndex === 0 ? "open" : ""}>
+                <summary class="entry-head" title="點選標題展開或收合內容">
+                  ${highlight(item.title || "未填標題", keyword)}
+                </summary>
+                <div class="entry-content">
 
 
                 <div class="meta">
@@ -2619,14 +2658,7 @@ function render(){
 
 
 
-                <div class="title">
 
-                  ${highlight(
-                    item.title,
-                    keyword
-                  )}
-
-                </div>
 
 
 
@@ -2669,7 +2701,8 @@ function render(){
                 </div>
 
 
-              </article>
+                </div>
+              </details>
 
             `;
 
@@ -2679,7 +2712,7 @@ function render(){
 
         html += `
 
-          </details>
+          </section>
 
         `;
 
@@ -2926,6 +2959,28 @@ authPassword.addEventListener(
 
   }
 );
+
+
+/* 日期控制整天展開／收合，標題則獨立控制單筆紀錄。 */
+
+content.addEventListener("click", event => {
+  const button = event.target.closest("[data-date-toggle]");
+  if(!button || !content.contains(button)) return;
+  const section = button.closest(".date-section");
+  const entries = [...section.querySelectorAll(".work-entry")];
+  const shouldOpen = !entries.some(entry => entry.open);
+  entries.forEach(entry => { entry.open = shouldOpen; });
+  button.setAttribute("aria-expanded", String(shouldOpen));
+});
+
+content.addEventListener("toggle", event => {
+  if(!event.target.matches(".work-entry")) return;
+  const section = event.target.closest(".date-section");
+  const anyOpen = [...section.querySelectorAll(".work-entry")]
+    .some(entry => entry.open);
+  section.querySelector("[data-date-toggle]")
+    .setAttribute("aria-expanded", String(anyOpen));
+}, true);
 
 
 /* 返回最上方 */
