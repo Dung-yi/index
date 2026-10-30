@@ -239,18 +239,22 @@ textarea{
   white-space:nowrap;
 }
 
-.entry-title{
+.entry-text{
   flex:1;
   min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.entry-title{
+  display:inline;
 }
 
 .entry-labels{
-  display:flex;
-  flex-wrap:wrap;
+  display:inline-flex;
   align-items:center;
   gap:6px;
-  margin-left:auto;
-  flex-shrink:0;
+  margin-left:6px;
+  vertical-align:middle;
 }
 
 .entry-labels .tag{
@@ -297,10 +301,6 @@ textarea{
   }
   .entry-head{
     flex-wrap:wrap;
-  }
-  .entry-labels{
-    flex-shrink:1;
-    margin-left:19px;
   }
 }
 
@@ -2836,9 +2836,10 @@ function render(){
               <details class="card work-entry" ${isSearching || dateIndex === 0 ? "open" : ""}>
                 <summary class="entry-head" title="點選標題展開或收合內容">
                   <span class="tag status-tag" data-status="${normalizeStatus(item.status)}">${normalizeStatus(item.status)}</span>
-                  <span class="entry-title">${highlight(item.title || "未填標題", keyword)}</span>
-                  <span class="entry-labels">
-                    <span class="tag" data-category="${esc(item.category || "其他")}">${highlight(item.category || "其他", keyword)}</span>
+                  <span class="entry-text">
+                    <span class="entry-title">${highlight(item.title || "未填標題", keyword)}</span><span class="entry-labels">
+                      <span class="tag" data-category="${esc(item.category || "其他")}">${highlight(item.category || "其他", keyword)}</span>
+                    </span>
                   </span>
                 </summary>
                 <div class="entry-content">
