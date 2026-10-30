@@ -363,9 +363,72 @@ textarea{
 
 .tag{
   font-size:12px;
+  font-weight:600;
   background:#f1f5f9;
+  color:#334155;
+  border:1px solid #cbd5e1;
   padding:5px 8px;
   border-radius:7px;
+}
+
+.tag[data-category="驗車"]{
+  background:#dbeafe;
+  color:#1e40af;
+  border-color:#93c5fd;
+}
+
+.tag[data-category="eTAG"]{
+  background:#dcfce7;
+  color:#166534;
+  border-color:#86efac;
+}
+
+.tag[data-category="加油卡"]{
+  background:#ffedd5;
+  color:#9a3412;
+  border-color:#fdba74;
+}
+
+.tag[data-category="罰單"]{
+  background:#fee2e2;
+  color:#991b1b;
+  border-color:#fca5a5;
+}
+
+.tag[data-category="保險"]{
+  background:#f3e8ff;
+  color:#6b21a8;
+  border-color:#d8b4fe;
+}
+
+.tag[data-category="新購車"]{
+  background:#ccfbf1;
+  color:#115e59;
+  border-color:#5eead4;
+}
+
+.tag[data-category="新租賃"]{
+  background:#fce7f3;
+  color:#9d174d;
+  border-color:#f9a8d4;
+}
+
+.tag[data-category="報廢"]{
+  background:#ede0d4;
+  color:#5e3023;
+  border-color:#cba88a;
+}
+
+.tag[data-category="停車費"]{
+  background:#e0e7ff;
+  color:#3730a3;
+  border-color:#a5b4fc;
+}
+
+.tag[data-category="其他"]{
+  background:#f1f5f9;
+  color:#334155;
+  border-color:#cbd5e1;
 }
 
 
@@ -2434,7 +2497,7 @@ function render(){
 
                 <div class="tags">
 
-                  <span class="tag">
+                  <span class="tag" data-category="${esc(item.category || "其他")}">
 
                     ${highlight(
                       item.category || "其他",
@@ -2671,17 +2734,19 @@ searchCategory.addEventListener(
 
 /* 日期搜尋 */
 
-// 點擊日期欄位任一處，直接開啟瀏覽器日曆。
-searchDate.addEventListener("click", event => {
-  if(typeof searchDate.showPicker === "function"){
-    try{
-      searchDate.showPicker();
-      // 避免點擊日曆圖示時，瀏覽器再切換一次開關。
-      event.preventDefault();
-    }catch(error){
-      // 不支援程式開啟日曆時，保留原生日期選擇操作。
+// 搜尋與新增／編輯的日期欄位，點擊任一處都直接開啟日曆。
+[searchDate, dateInput].forEach(dateField => {
+  dateField.addEventListener("click", event => {
+    if(typeof dateField.showPicker === "function"){
+      try{
+        dateField.showPicker();
+        // 避免點擊日曆圖示時，瀏覽器再切換一次開關。
+        event.preventDefault();
+      }catch(error){
+        // 不支援程式開啟日曆時，保留原生日期選擇操作。
+      }
     }
-  }
+  });
 });
 
 searchDate.addEventListener(
