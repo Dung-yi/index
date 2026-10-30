@@ -26,7 +26,7 @@ textarea{
 }
 
 .app{
-  max-width:980px;
+  max-width:1180px;
   margin:auto;
   min-height:100vh;
 }
@@ -176,6 +176,129 @@ textarea{
    Search
 ========================= */
 
+.workspace-layout{
+  display:grid;
+  grid-template-columns:164px minmax(0,1fr);
+  gap:12px;
+  padding-top:16px;
+}
+
+.workspace-sidebar{
+  position:sticky;
+  top:16px;
+  align-self:start;
+  padding-left:16px;
+}
+
+.workspace-sidebar h2{
+  margin:0 0 10px;
+  font-size:15px;
+  color:#334155;
+}
+
+.status-menu{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+}
+
+.status-filter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:44px;
+  padding:11px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:11px;
+  background:#fff;
+  color:#334155;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.status-filter[aria-pressed="true"]{
+  outline:2px solid #2563eb;
+  outline-offset:2px;
+}
+
+.status-filter:focus-visible{
+  outline:3px solid #1e40af;
+  outline-offset:3px;
+}
+
+.status-count{
+  font-size:12px;
+  opacity:.85;
+}
+
+.entry-title{
+  flex:1;
+  min-width:0;
+}
+
+.entry-labels{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+  margin-left:auto;
+  flex-shrink:0;
+}
+
+.entry-labels .tag{
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.status-tag[data-status="已完成"],
+.status-filter[data-status-filter="已完成"]{
+  background:#dcfce7;
+  color:#166534;
+  border-color:#86efac;
+}
+
+.status-tag[data-status="未完成"],
+.status-filter[data-status-filter="未完成"]{
+  background:#fee2e2;
+  color:#991b1b;
+  border-color:#fca5a5;
+}
+
+.status-tag[data-status="處理中"],
+.status-filter[data-status-filter="處理中"]{
+  background:#fef3c7;
+  color:#92400e;
+  border-color:#fcd34d;
+}
+
+@media(max-width:760px){
+  .workspace-layout{
+    grid-template-columns:minmax(0,1fr);
+    padding-top:12px;
+  }
+  .workspace-sidebar{
+    position:static;
+    padding:0 16px;
+  }
+  .status-menu{
+    flex-direction:row;
+    flex-wrap:wrap;
+  }
+  .status-filter{
+    flex:1 1 auto;
+  }
+  .entry-head{
+    flex-wrap:wrap;
+  }
+  .entry-labels{
+    flex-shrink:1;
+    margin-left:19px;
+  }
+}
+
 .search{
   background:#fff;
   padding:16px;
@@ -311,7 +434,7 @@ textarea{
 
 .back-to-top{
   position:fixed;
-  right:max(16px, calc((100vw - 980px) / 2 - 68px));
+  right:max(16px, calc((100vw - 1180px) / 2 - 68px));
   bottom:calc(24px + env(safe-area-inset-bottom, 0px));
   z-index:5;
   display:flex;
@@ -922,6 +1045,22 @@ textarea{
 
   </header>
 
+  <div class="workspace-layout">
+    <aside class="workspace-sidebar" aria-label="依工作進度篩選">
+      <h2>工作進度</h2>
+      <nav class="status-menu" aria-label="工作進度">
+        <button type="button" class="status-filter" data-status-filter=""
+          aria-pressed="true">全部<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="已完成"
+          aria-pressed="false">已完成<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="未完成"
+          aria-pressed="false">未完成<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="處理中"
+          aria-pressed="false">處理中<span class="status-count">0</span></button>
+      </nav>
+    </aside>
+    <div class="workspace-main">
+
 
 
   <!-- =========================
@@ -1108,6 +1247,8 @@ textarea{
     class="content"
     id="content"
   ></main>
+    </div>
+  </div>
 
   <button
     type="button"
@@ -1196,6 +1337,15 @@ textarea{
 
 
     <div class="group">
+      <label for="statusInput">🚦 工作進度</label>
+      <select id="statusInput">
+        <option value="未完成">未完成</option>
+        <option value="處理中">處理中</option>
+        <option value="已完成">已完成</option>
+      </select>
+    </div>
+
+    <div class="group">
 
       <label>
         📋 工作內容（與標題擇一填寫）
@@ -1280,6 +1430,14 @@ let editingId = null;
 
 let currentUser = null;
 
+let selectedStatus = "";
+
+const WORK_STATUSES = ["未完成", "處理中", "已完成"];
+
+function normalizeStatus(value){
+  return WORK_STATUSES.includes(value) ? value : "未完成";
+}
+
 
 
 /* =========================================================
@@ -1351,6 +1509,8 @@ const titleInput =
 
 const categoryInput =
   document.getElementById("categoryInput");
+
+const statusInput = document.getElementById("statusInput");
 
 const contentInput =
   document.getElementById("contentInput");
@@ -1825,6 +1985,8 @@ async function loadWorks(){
 
         category:item.category,
 
+        status:normalizeStatus(item.status),
+
         content:item.content,
 
         createdAt:item.created_at
@@ -2087,6 +2249,8 @@ function openModal(id=null){
     categoryInput.value =
       item.category || "其他";
 
+    statusInput.value = normalizeStatus(item.status);
+
 
     contentInput.value =
       item.content || "";
@@ -2108,6 +2272,8 @@ function openModal(id=null){
 
     categoryInput.value =
       "驗車";
+
+    statusInput.value = "未完成";
 
 
     contentInput.value =
@@ -2166,6 +2332,8 @@ async function saveWork(){
   const category =
     categoryInput.value;
 
+  const status = normalizeStatus(statusInput.value);
+
   const workContent =
     contentInput.value.trim();
 
@@ -2212,6 +2380,9 @@ async function saveWork(){
           category:
             category,
 
+          status:
+            status,
+
           content:
             workContent
 
@@ -2248,6 +2419,9 @@ async function saveWork(){
 
           category:
             category,
+
+          status:
+            status,
 
           content:
             workContent
@@ -2378,6 +2552,8 @@ function showToday(){
 
 function clearSearch(){
 
+  selectedStatus = "";
+
   searchInput.value =
     "";
 
@@ -2414,12 +2590,16 @@ function render(){
     searchDate.value;
 
   const isSearching =
-    Boolean(keyword || selectedCategory || selectedDate);
+    Boolean(keyword || selectedCategory || selectedDate || selectedStatus);
 
 
   const filtered =
     works.filter(
       item => {
+
+        if(selectedStatus && normalizeStatus(item.status) !== selectedStatus){
+          return false;
+        }
 
         /* -------------------------
            分類篩選
@@ -2485,6 +2665,14 @@ function render(){
     );
 
 
+  document.querySelectorAll("[data-status-filter]").forEach(button => {
+    const status = button.dataset.statusFilter;
+    button.setAttribute("aria-pressed", String(status === selectedStatus));
+    button.querySelector(".status-count").textContent = status
+      ? works.filter(item => normalizeStatus(item.status) === status).length
+      : works.length;
+  });
+
   /* =========================
      統計
   ========================= */
@@ -2524,7 +2712,8 @@ function render(){
     if(
       keyword ||
       selectedCategory ||
-      selectedDate
+      selectedDate ||
+      selectedStatus
     ){
 
       emptyText =
@@ -2641,7 +2830,11 @@ function render(){
 
               <details class="card work-entry" ${isSearching || dateIndex === 0 ? "open" : ""}>
                 <summary class="entry-head" title="點選標題展開或收合內容">
-                  ${highlight(item.title || "未填標題", keyword)}
+                  <span class="entry-title">${highlight(item.title || "未填標題", keyword)}</span>
+                  <span class="entry-labels">
+                    <span class="tag" data-category="${esc(item.category || "其他")}">${highlight(item.category || "其他", keyword)}</span>
+                    <span class="tag status-tag" data-status="${normalizeStatus(item.status)}">${normalizeStatus(item.status)}</span>
+                  </span>
                 </summary>
                 <div class="entry-content">
 
@@ -2659,21 +2852,6 @@ function render(){
 
 
 
-
-
-
-                <div class="tags">
-
-                  <span class="tag" data-category="${esc(item.category || "其他")}">
-
-                    ${highlight(
-                      item.category || "其他",
-                      keyword
-                    )}
-
-                  </span>
-
-                </div>
 
 
 
@@ -2959,6 +3137,16 @@ authPassword.addEventListener(
 
   }
 );
+
+
+/* 工作進度篩選，可與關鍵字、分類及日期條件一起使用。 */
+
+document.querySelector(".status-menu").addEventListener("click", event => {
+  const button = event.target.closest("[data-status-filter]");
+  if(!button) return;
+  selectedStatus = button.dataset.statusFilter;
+  render();
+});
 
 
 /* 日期控制整天展開／收合，標題則獨立控制單筆紀錄。 */
