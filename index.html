@@ -269,8 +269,8 @@ textarea{
   border-color:#86efac;
 }
 
-.status-tag[data-status="未完成"],
-.status-filter[data-status-filter="未完成"]{
+.status-tag[data-status="未處理"],
+.status-filter[data-status-filter="未處理"]{
   background:#fee2e2;
   color:#991b1b;
   border-color:#fca5a5;
@@ -1058,8 +1058,8 @@ textarea{
           aria-pressed="true">全部<span class="status-count">0</span></button>
         <button type="button" class="status-filter" data-status-filter="已完成"
           aria-pressed="false">已完成<span class="status-count">0</span></button>
-        <button type="button" class="status-filter" data-status-filter="未完成"
-          aria-pressed="false">未完成<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="未處理"
+          aria-pressed="false">未處理<span class="status-count">0</span></button>
         <button type="button" class="status-filter" data-status-filter="處理中"
           aria-pressed="false">處理中<span class="status-count">0</span></button>
       </nav>
@@ -1344,7 +1344,7 @@ textarea{
     <div class="group">
       <label for="statusInput">🚦 工作進度</label>
       <select id="statusInput">
-        <option value="未完成">未完成</option>
+        <option value="未處理">未處理</option>
         <option value="處理中">處理中</option>
         <option value="已完成">已完成</option>
       </select>
@@ -1437,10 +1437,10 @@ let currentUser = null;
 
 let selectedStatus = "";
 
-const WORK_STATUSES = ["未完成", "處理中", "已完成"];
+const WORK_STATUSES = ["未處理", "處理中", "已完成"];
 
 function normalizeStatus(value){
-  return WORK_STATUSES.includes(value) ? value : "未完成";
+  return WORK_STATUSES.includes(value) ? value : "未處理";
 }
 
 
@@ -2278,7 +2278,7 @@ function openModal(id=null){
     categoryInput.value =
       "驗車";
 
-    statusInput.value = "未完成";
+    statusInput.value = "未處理";
 
 
     contentInput.value =
