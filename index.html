@@ -1423,11 +1423,9 @@ textarea{
     </div>
 
     <fieldset id="parkingWorkflowInput" class="parking-workflow" hidden>
-      <legend>停車費工作流程</legend>
-      <label class="parking-step"><input type="checkbox" data-modal-parking-step="0"><span>1. 線上查詢是否未繳停車費</span></label>
-      <label class="parking-step"><input type="checkbox" data-modal-parking-step="1"><span>2. 鉛筆寫上 姓名 單位地點</span></label>
-      <label class="parking-step"><input type="checkbox" data-modal-parking-step="2"><span>3. 罰單正本繳交佩君</span></label>
-      <p class="parking-help">勾選三項後，工作進度會自動改為「已完成」。</p>
+      <legend id="workflowInputLegend">工作流程</legend>
+      <div id="workflowInputSteps"></div>
+      <p class="parking-help">全部步驟勾選後，工作進度會自動改為「已完成」。</p>
     </fieldset>
 
     <div class="group">
@@ -1518,6 +1516,38 @@ let currentUser = null;
 let selectedStatus = "";
 
 const PARKING_STEPS = ["線上查詢是否未繳停車費","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
+const FINE_STEPS = ["掃描罰單","寄Mail給當地行政(附上掃描罰單檔案)，詢問是否本人行駛","確認後罰單上傳 EIP","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
+const FINE_COLUMNS = ["fine_scanned", "fine_emailed_admin", "fine_uploaded_eip", "fine_written_details", "fine_submitted_original"];
+
+function workflowSteps(category){
+  return category === "停車費" ? PARKING_STEPS
+    : category === "罰單" ? FINE_STEPS : [];
+}
+
+function normalizeWorkflowSteps(category, steps){
+  return workflowSteps(category).map((_, index) => steps?.[index] === true);
+}
+
+function workflowValues(item){
+  return normalizeWorkflowSteps(item.category,
+    item.category === "罰單" ? item.fineWorkflow : item.parkingWorkflow);
+}
+
+function workflowStepStatus(category, steps){
+  const checked = normalizeWorkflowSteps(category, steps);
+  return checked.length && checked.every(Boolean) ? "已完成"
+    : checked.some(Boolean) ? "處理中" : "未處理";
+}
+
+function finePayload(steps){
+  const checked = normalizeWorkflowSteps("罰單", steps);
+  return Object.fromEntries(FINE_COLUMNS.map((column, index) => [column, checked[index]]));
+}
+
+function workflowPayload(category, steps){
+  return category === "罰單" ? finePayload(steps) : parkingPayload(steps);
+}
+
 const parkingPendingIds = new Set();
 const parkingUnlockedIds = new Set();
 
@@ -1621,22 +1651,47 @@ const categoryInput =
 const statusInput = document.getElementById("statusInput");
 const parkingWorkflowInput = document.getElementById("parkingWorkflowInput");
 
-function modalParkingSteps(){
+let modalWorkflowCategory = null;
+let modalWorkflowDrafts = {};
+
+function modalWorkflowSteps(){
   return [...parkingWorkflowInput.querySelectorAll("input[type=checkbox]")]
     .map(input => input.checked);
 }
 
+function modalParkingSteps(){
+  return categoryInput.value === "停車費"
+    ? modalWorkflowSteps() : normalizeParkingSteps(modalWorkflowDrafts["停車費"]);
+}
+
+function modalFineSteps(){
+  return categoryInput.value === "罰單"
+    ? modalWorkflowSteps() : normalizeWorkflowSteps("罰單", modalWorkflowDrafts["罰單"]);
+}
+
 function setModalParkingSteps(steps){
-  const checked = normalizeParkingSteps(steps);
-  parkingWorkflowInput.querySelectorAll("input[type=checkbox]")
-    .forEach((input, index) => { input.checked = checked[index]; });
+  modalWorkflowDrafts["停車費"] = normalizeParkingSteps(steps);
+}
+
+function setModalFineSteps(steps){
+  modalWorkflowDrafts["罰單"] = normalizeWorkflowSteps("罰單", steps);
 }
 
 function updateParkingVisibility(){
-  parkingWorkflowInput.hidden = categoryInput.value !== "停車費";
-  if(!parkingWorkflowInput.hidden && modalParkingSteps().every(Boolean)){
-    statusInput.value = "已完成";
+  if(modalWorkflowCategory){
+    modalWorkflowDrafts[modalWorkflowCategory] = modalWorkflowSteps();
   }
+  const category = categoryInput.value;
+  const steps = workflowSteps(category);
+  parkingWorkflowInput.hidden = steps.length === 0;
+  modalWorkflowCategory = steps.length ? category : null;
+  if(!steps.length) return;
+  const checked = normalizeWorkflowSteps(category, modalWorkflowDrafts[category]);
+  document.getElementById("workflowInputLegend").textContent = category + "工作流程";
+  document.getElementById("workflowInputSteps").innerHTML = steps.map((step, index) =>
+    `<label class="parking-step"><input type="checkbox" data-modal-workflow-step="${index}" ${checked[index] ? "checked" : ""}><span>${index + 1}. ${esc(step)}</span></label>`
+  ).join("");
+  if(checked.every(Boolean)) statusInput.value = "已完成";
 }
 
 const contentInput =
@@ -2120,6 +2175,8 @@ async function loadWorks(){
           item.parking_submitted_original === true
         ],
 
+        fineWorkflow:FINE_COLUMNS.map(column => item[column] === true),
+
         content:item.content,
 
         createdAt:item.created_at
@@ -2343,6 +2400,9 @@ async function importOldData(){
 
 function openModal(id=null){
 
+  modalWorkflowCategory = null;
+  modalWorkflowDrafts = {};
+
   editingId = id;
 
 
@@ -2384,6 +2444,7 @@ function openModal(id=null){
 
     statusInput.value = normalizeStatus(item.status);
     setModalParkingSteps(item.parkingWorkflow);
+    setModalFineSteps(item.fineWorkflow);
 
 
     contentInput.value =
@@ -2409,6 +2470,7 @@ function openModal(id=null){
 
     statusInput.value = "未處理";
     setModalParkingSteps([false, false, false]);
+    setModalFineSteps([false, false, false, false, false]);
 
 
     contentInput.value =
@@ -2472,7 +2534,11 @@ async function saveWork(){
   const parkingSteps = category === "停車費"
     ? modalParkingSteps() : [false, false, false];
 
-  const status = category === "停車費" && parkingSteps.every(Boolean)
+  const fineSteps = category === "罰單"
+    ? modalFineSteps() : FINE_STEPS.map(() => false);
+
+  const activeSteps = category === "罰單" ? fineSteps : parkingSteps;
+  const status = workflowSteps(category).length && activeSteps.every(Boolean)
     ? "已完成" : normalizeStatus(statusInput.value);
 
   const workContent =
@@ -2525,6 +2591,7 @@ async function saveWork(){
             status,
 
           ...parkingPayload(parkingSteps),
+          ...finePayload(fineSteps),
 
           content:
             workContent
@@ -2567,6 +2634,7 @@ async function saveWork(){
             status,
 
           ...parkingPayload(parkingSteps),
+          ...finePayload(fineSteps),
 
           content:
             workContent
@@ -3004,9 +3072,9 @@ function render(options = {}){
 
 
 
-                ${item.category === "停車費" ? `
+                ${workflowSteps(item.category).length ? `
                   <fieldset class="parking-workflow">
-                    <legend>停車費工作流程<span class="parking-progress">${normalizeParkingSteps(item.parkingWorkflow).filter(Boolean).length} / 3</span></legend>
+                    <legend>${esc(item.category)}工作流程<span class="parking-progress">${workflowValues(item).filter(Boolean).length} / ${workflowSteps(item.category).length}</span></legend>
                     <div class="parking-lock-row">
                       <button type="button" class="parking-lock-button" data-parking-lock
                         aria-pressed="${parkingUnlockedIds.has(String(item.id))}"
@@ -3015,15 +3083,15 @@ function render(options = {}){
                       </button>
                       <span class="parking-lock-hint">${parkingUnlockedIds.has(String(item.id)) ? "修改會即時儲存，完成後請鎖定。" : "已鎖定，先解鎖才能勾選或取消。"}</span>
                     </div>
-                    ${PARKING_STEPS.map((step, index) => `
+                    ${workflowSteps(item.category).map((step, index) => `
                       <label class="parking-step">
                         <input type="checkbox" data-parking-step="${index}"
-                          ${normalizeParkingSteps(item.parkingWorkflow)[index] ? "checked" : ""}
+                          ${workflowValues(item)[index] ? "checked" : ""}
                           ${!parkingUnlockedIds.has(String(item.id)) || parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
                         <span>${index + 1}. ${esc(step)}</span>
                       </label>
                     `).join("")}
-                    <p class="parking-help">勾選後自動儲存，三項完成會自動標為「已完成」。</p>
+                    <p class="parking-help">勾選後自動儲存，全部完成會自動標為「已完成」。</p>
                   </fieldset>
                 ` : ""}
 
@@ -3316,8 +3384,8 @@ authPassword.addEventListener(
 categoryInput.addEventListener("change", updateParkingVisibility);
 
 parkingWorkflowInput.addEventListener("change", () => {
-  if(categoryInput.value === "停車費"){
-    statusInput.value = parkingStepStatus(modalParkingSteps());
+  if(workflowSteps(categoryInput.value).length){
+    statusInput.value = workflowStepStatus(categoryInput.value, modalWorkflowSteps());
   }
 });
 
@@ -3380,20 +3448,20 @@ content.addEventListener("change", async event => {
   const entry = checkbox.closest(".work-entry");
   const id = entry.dataset.workId;
   const item = works.find(work => String(work.id) === id);
-  if(!item || item.category !== "停車費" || parkingPendingIds.has(id)) return;
+  if(!item || !workflowSteps(item.category).length || parkingPendingIds.has(id)) return;
 
   if(!parkingUnlockedIds.has(id)){
-    checkbox.checked = normalizeParkingSteps(item.parkingWorkflow)[Number(checkbox.dataset.parkingStep)] || false;
+    checkbox.checked = workflowValues(item)[Number(checkbox.dataset.parkingStep)] || false;
     refreshParkingLock(entry);
     return;
   }
 
-  const previousSteps = normalizeParkingSteps(item.parkingWorkflow);
+  const previousSteps = workflowValues(item);
   const nextSteps = [...previousSteps];
   const index = Number(checkbox.dataset.parkingStep);
-  if(!Number.isInteger(index) || index < 0 || index >= PARKING_STEPS.length) return;
+  if(!Number.isInteger(index) || index < 0 || index >= workflowSteps(item.category).length) return;
   nextSteps[index] = checkbox.checked;
-  const nextStatus = parkingStepStatus(nextSteps);
+  const nextStatus = workflowStepStatus(item.category, nextSteps);
   const savingUserId = currentUser.id;
 
   parkingPendingIds.add(id);
@@ -3402,14 +3470,15 @@ content.addEventListener("change", async event => {
   let saveError = null;
   try{
     const {error} = await supabaseClient.from("work_diary")
-      .update({...parkingPayload(nextSteps), status:nextStatus})
+      .update({...workflowPayload(item.category, nextSteps), status:nextStatus})
       .eq("id", item.id)
       .eq("user_id", savingUserId)
       .select("id")
       .single();
     if(error) throw error;
     if(currentUser?.id === savingUserId){
-      item.parkingWorkflow = nextSteps;
+      if(item.category === "罰單") item.fineWorkflow = nextSteps;
+      else item.parkingWorkflow = nextSteps;
       item.status = nextStatus;
       if(nextStatus === "已完成") parkingUnlockedIds.delete(id);
     }
