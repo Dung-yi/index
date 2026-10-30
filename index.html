@@ -316,7 +316,7 @@ textarea{
 .date-head{
   display:flex;
   justify-content:space-between;
-  align-items:center;
+  align-items:flex-start;
   gap:10px;
   padding:14px;
   background:#fff;
@@ -335,6 +335,7 @@ textarea{
   color:#475569;
   font-size:12px;
   flex-shrink:0;
+  margin-top:5px;
 }
 
 .date-section[open] > .date-head{
@@ -352,6 +353,34 @@ textarea{
 .date-head:focus-visible{
   outline:3px solid #2563eb;
   outline-offset:3px;
+}
+
+.date-summary{
+  flex:1;
+  min-width:0;
+}
+
+.date-heading{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.date-titles{
+  margin:10px 0 0;
+  padding-left:20px;
+  color:#334155;
+  font-size:14px;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+}
+
+.date-titles li + li{
+  margin-top:4px;
+}
+
+.date-section[open] .date-titles{
+  display:none;
 }
 
 .date-head h2{
@@ -2449,27 +2478,32 @@ function render(){
   let html = "";
 
 
-  Object.keys(groups)
-    .sort(
-      (a,b) =>
-        b.localeCompare(a)
-    )
-    .forEach(
-      date => {
+  const sortedDates =
+    Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+  sortedDates.forEach(
+      (date, dateIndex) => {
 
         html += `
 
-          <details class="date-section" ${isSearching ? "open" : ""}>
+          <details class="date-section" ${isSearching || dateIndex === 0 ? "open" : ""}>
 
             <summary class="date-head" title="點選展開或收合當日紀錄">
 
-              <h2>
-                📅 ${formatDate(date)}
-              </h2>
+              <div class="date-summary">
 
-              <span class="badge">
-                ${groups[date].length} 筆
-              </span>
+                <div class="date-heading">
+                  <h2>📅 ${formatDate(date)}</h2>
+                  <span class="badge">${groups[date].length} 筆</span>
+                </div>
+
+                <ul class="date-titles">
+                  ${groups[date].map(item =>
+                    `<li>${esc(item.title || "未填標題")}</li>`
+                  ).join("")}
+                </ul>
+
+              </div>
 
             </summary>
 
