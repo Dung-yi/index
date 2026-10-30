@@ -26,8 +26,9 @@ textarea{
 }
 
 .app{
-  max-width:1180px;
-  margin:auto;
+  width:100%;
+  max-width:none;
+  margin:0;
   min-height:100vh;
 }
 
@@ -178,9 +179,13 @@ textarea{
 
 .workspace-layout{
   display:grid;
-  grid-template-columns:164px minmax(0,1fr);
+  grid-template-columns:clamp(156px,12vw,200px) minmax(0,1fr);
   gap:12px;
   padding-top:16px;
+}
+
+.workspace-main{
+  min-width:0;
 }
 
 .workspace-sidebar{
@@ -439,7 +444,7 @@ textarea{
 
 .back-to-top{
   position:fixed;
-  right:max(16px, calc((100vw - 1180px) / 2 - 68px));
+  right:calc(24px + env(safe-area-inset-right, 0px));
   bottom:calc(24px + env(safe-area-inset-bottom, 0px));
   z-index:5;
   display:flex;
@@ -723,6 +728,7 @@ textarea{
 
 .body{
   white-space:pre-wrap;
+  overflow-wrap:anywhere;
   line-height:1.65;
   color:#4b5563;
   font-size:17px;
