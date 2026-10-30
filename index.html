@@ -234,6 +234,11 @@ textarea{
   opacity:.85;
 }
 
+.entry-head > .status-tag{
+  flex-shrink:0;
+  white-space:nowrap;
+}
+
 .entry-title{
   flex:1;
   min-width:0;
@@ -2830,10 +2835,10 @@ function render(){
 
               <details class="card work-entry" ${isSearching || dateIndex === 0 ? "open" : ""}>
                 <summary class="entry-head" title="點選標題展開或收合內容">
+                  <span class="tag status-tag" data-status="${normalizeStatus(item.status)}">${normalizeStatus(item.status)}</span>
                   <span class="entry-title">${highlight(item.title || "未填標題", keyword)}</span>
                   <span class="entry-labels">
                     <span class="tag" data-category="${esc(item.category || "其他")}">${highlight(item.category || "其他", keyword)}</span>
-                    <span class="tag status-tag" data-status="${normalizeStatus(item.status)}">${normalizeStatus(item.status)}</span>
                   </span>
                 </summary>
                 <div class="entry-content">
