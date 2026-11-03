@@ -312,53 +312,99 @@ textarea{
 .search{
   background:#fff;
   padding:16px;
+  margin-bottom:16px;
   border-bottom:1px solid #e5e7eb;
 }
 
 .search-row{
   display:flex;
+  align-items:center;
+  flex-wrap:wrap;
   gap:10px;
 }
 
 .search-input-wrap{
   position:relative;
-  flex:1;
+  flex:0 1 320px;
+  min-width:190px;
+  max-width:360px;
 }
 
-.search input{
+.search-input-wrap input{
   width:100%;
-  padding:13px 16px;
+  height:46px;
+  padding:12px 14px;
   border:1px solid #d1d5db;
-  border-radius:12px;
-  font-size:15px;
+  border-radius:11px;
+  font-size:14px;
   outline:0;
 }
 
-.search input:focus{
+.search-input-wrap input:focus{
   border-color:#2563eb;
+  box-shadow:0 0 0 2px #dbeafe;
 }
 
-.search select,
-#searchDate{
-  width:180px;
-  padding:13px 12px;
+.search-control-group{
+  display:flex;
+  align-items:stretch;
+  flex:0 1 230px;
+  min-width:210px;
+  height:46px;
   border:1px solid #d1d5db;
-  border-radius:12px;
-  font-size:15px;
+  border-radius:11px;
   background:#fff;
+}
+
+.search-date-group{
+  flex-basis:235px;
+  min-width:215px;
+}
+
+.search-control-group:focus-within{
+  border-color:#2563eb;
+  box-shadow:0 0 0 2px #dbeafe;
+}
+
+.search-control-group select,
+.search-control-group input{
+  flex:1;
+  min-width:0;
+  width:100%;
+  padding:10px 12px;
+  border:0;
+  border-radius:10px 0 0 10px;
+  background:#fff;
+  font-size:14px;
+  color:#1f2937;
   outline:0;
   cursor:pointer;
 }
 
-#searchDate{
-  width:160px;
+.search-control-action{
+  flex-shrink:0;
+  padding:0 13px;
+  border:0;
+  border-left:1px solid #e2e8f0;
+  border-radius:0 10px 10px 0;
+  background:#f8fafc;
+  color:#475569;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
 }
 
-.search select:focus,
-#searchDate:focus{
-  border-color:#2563eb;
-}
+.search-control-action:hover{background:#e2e8f0;}
+.search-control-action:focus-visible{outline:2px solid #2563eb;outline-offset:-3px;}
+.today-action{background:#eff6ff;color:#1d4ed8;}
+.today-action:hover{background:#dbeafe;}
 
+.search-row > #addBtn{
+  flex:0 0 auto;
+  width:auto;
+  min-height:46px;
+  padding:12px 20px;
+}
 
 /* =========================
    Toolbar
@@ -399,38 +445,6 @@ textarea{
   background:#ecfdf5;
   color:#047857;
   border:1px solid #a7f3d0;
-}
-
-
-/* =========================
-   Stats
-========================= */
-
-.stats{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  padding:0 16px 16px;
-}
-
-.stat{
-  background:#fff;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:14px;
-  text-align:center;
-}
-
-.num{
-  font-size:22px;
-  font-weight:700;
-  color:#2563eb;
-}
-
-.label{
-  font-size:12px;
-  color:#6b7280;
-  margin-top:4px;
 }
 
 
@@ -972,14 +986,6 @@ textarea{
     max-width:100%;
   }
 
-  .stats{
-    grid-template-columns:repeat(3,1fr);
-  }
-
-  .toolbar{
-    flex-direction:column;
-  }
-
   .primary{
     width:100%;
   }
@@ -994,12 +1000,18 @@ textarea{
 
   .search-input-wrap{
     flex:1 1 100%;
+    max-width:none;
+    min-width:0;
   }
 
-  .search select,
-  #searchDate{
-    flex:1;
-    width:auto;
+  .search-control-group{
+    flex:1 1 220px;
+    min-width:0;
+  }
+
+  .search-row > #addBtn{
+    flex:1 1 100%;
+    width:100%;
   }
 
   .body{
@@ -1160,19 +1172,12 @@ textarea{
   ========================= -->
 
   <div class="search">
-
     <div class="search-row">
-
       <div class="search-input-wrap">
-
-        <input
-          id="searchInput"
-          placeholder="🔍 搜尋日期、標題、工作內容..."
-        >
-
+        <input type="search" id="searchInput" aria-label="搜尋工作紀錄"
+          placeholder="🔍 搜尋日期、標題、工作內容...">
       </div>
-
-
+      <div class="search-control-group" role="group" aria-label="工作分類篩選">
       <select id="searchCategory">
 
         <option value="">
@@ -1220,120 +1225,18 @@ textarea{
         </option>
 
       </select>
-
-
-      <!-- 日期篩選 -->
-
-      <input
-        type="date"
-        id="searchDate"
-        title="選擇日期篩選"
-      >
-
+        <button type="button" class="search-control-action" id="clearCategoryBtn"
+          aria-label="清除分類選擇" title="清除分類選擇">清除</button>
+      </div>
+      <div class="search-control-group search-date-group" role="group" aria-label="日期篩選">
+        <input type="date" id="searchDate" title="選擇日期篩選" aria-label="選擇日期篩選">
+        <button type="button" class="search-control-action today-action" id="todayBtn"
+          title="選擇今天日期">今天</button>
+      </div>
+      <button type="button" class="btn primary" id="addBtn">＋ 新增工作內容</button>
+      <button type="button" class="btn import-btn" id="importBtn" style="display:none;">☁️ 匯入舊資料</button>
     </div>
-
   </div>
-
-
-
-  <!-- =========================
-       工具列
-  ========================= -->
-
-  <div class="toolbar">
-
-    <button
-      class="btn primary"
-      id="addBtn"
-    >
-      ＋ 新增工作內容
-    </button>
-
-
-    <button
-      class="btn secondary"
-      id="todayBtn"
-    >
-      📅 今天
-    </button>
-
-
-    <button
-      class="btn secondary"
-      id="clearSearchBtn"
-    >
-      清除搜尋
-    </button>
-
-
-    <button
-      class="btn import-btn"
-      id="importBtn"
-      style="display:none;"
-    >
-      ☁️ 匯入舊資料
-    </button>
-
-  </div>
-
-
-
-  <!-- =========================
-       統計
-  ========================= -->
-
-  <div class="stats">
-
-    <div class="stat">
-
-      <div
-        class="num"
-        id="total"
-      >
-        0
-      </div>
-
-      <div class="label">
-        總紀錄
-      </div>
-
-    </div>
-
-
-    <div class="stat">
-
-      <div
-        class="num"
-        id="todayCount"
-      >
-        0
-      </div>
-
-      <div class="label">
-        今日紀錄
-      </div>
-
-    </div>
-
-
-    <div class="stat">
-
-      <div
-        class="num"
-        id="dates"
-      >
-        0
-      </div>
-
-      <div class="label">
-        紀錄日期
-      </div>
-
-    </div>
-
-  </div>
-
-
 
   <main
     class="content"
@@ -1665,15 +1568,6 @@ const searchDate =
 
 const content =
   document.getElementById("content");
-
-const total =
-  document.getElementById("total");
-
-const todayCount =
-  document.getElementById("todayCount");
-
-const dates =
-  document.getElementById("dates");
 
 const todayText =
   document.getElementById("todayText");
@@ -2811,18 +2705,13 @@ async function deleteWork(id){
 ========================================================= */
 
 function showToday(){
-
-  searchInput.value =
-    getToday();
-
-  searchCategory.value =
-    "";
-
-  searchDate.value =
-    "";
-
+  searchDate.value = getToday();
   render();
+}
 
+function clearCategory(){
+  searchCategory.value = "";
+  render();
 }
 
 
@@ -2956,32 +2845,6 @@ function render(options = {}){
       ? works.filter(item => normalizeStatus(item.status) === status).length
       : works.length;
   });
-
-  /* =========================
-     統計
-  ========================= */
-
-  total.textContent =
-    works.length;
-
-
-  todayCount.textContent =
-    works.filter(
-      item =>
-        item.date ===
-        getToday()
-    ).length;
-
-
-  dates.textContent =
-    new Set(
-      works.map(
-        item =>
-          item.date
-      )
-    ).size;
-
-
 
   /* =========================
      沒有結果
@@ -3341,10 +3204,10 @@ document
 
 
 document
-  .getElementById("clearSearchBtn")
+  .getElementById("clearCategoryBtn")
   .addEventListener(
     "click",
-    clearSearch
+    clearCategory
   );
 
 
