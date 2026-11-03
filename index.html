@@ -1226,7 +1226,7 @@ textarea{
 
       </select>
         <button type="button" class="search-control-action" id="clearCategoryBtn"
-          aria-label="清除分類選擇" title="清除分類選擇">清除</button>
+          aria-label="清除所有篩選" title="清除搜尋、分類、日期及工作進度篩選">清除</button>
       </div>
       <div class="search-control-group search-date-group" role="group" aria-label="日期篩選">
         <input type="date" id="searchDate" title="選擇日期篩選" aria-label="選擇日期篩選">
@@ -2709,11 +2709,6 @@ function showToday(){
   render();
 }
 
-function clearCategory(){
-  searchCategory.value = "";
-  render();
-}
-
 
 
 /* =========================================================
@@ -3207,7 +3202,7 @@ document
   .getElementById("clearCategoryBtn")
   .addEventListener(
     "click",
-    clearCategory
+    clearSearch
   );
 
 
