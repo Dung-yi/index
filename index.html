@@ -928,6 +928,21 @@ textarea{
   color:#4338ca;
 }
 
+.pending-overlay{z-index:30;}
+.pending-modal{width:100%;max-width:560px;}
+.pending-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
+.pending-title-row h2{margin:0;font-size:21px;color:#1e293b;}
+.pending-close{width:36px;height:36px;flex-shrink:0;border:0;border-radius:10px;background:#f1f5f9;color:#475569;font-size:24px;cursor:pointer;}
+.pending-description{margin:8px 0 16px;color:#64748b;font-size:14px;line-height:1.6;}
+.pending-list{display:grid;gap:9px;max-height:45vh;overflow-y:auto;padding:3px;}
+.pending-item{display:block;width:100%;padding:13px;text-align:left;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;color:#1e293b;cursor:pointer;}
+.pending-item:hover{border-color:#93c5fd;background:#eff6ff;}
+.pending-item-title{display:block;font-size:15px;font-weight:600;overflow-wrap:anywhere;line-height:1.5;}
+.pending-item-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:7px;font-size:12px;color:#64748b;}
+.pending-footer{display:flex;gap:10px;margin-top:18px;}
+.pending-footer .btn{flex:1;}
+.pending-close:focus-visible,.pending-item:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
+
 .modal-actions{
   display:flex;
   gap:10px;
@@ -1345,6 +1360,23 @@ textarea{
 
 
 
+<!-- 開啟網頁後的未處理事項提醒 -->
+<div class="modal-bg pending-overlay" id="pendingNoticeBg">
+  <section class="modal pending-modal" role="dialog" aria-modal="true"
+    aria-labelledby="pendingNoticeTitle" aria-describedby="pendingNoticeDescription">
+    <div class="pending-title-row">
+      <h2 id="pendingNoticeTitle">📋 未處理事項</h2>
+      <button type="button" class="pending-close" id="pendingNoticeClose" aria-label="關閉未處理事項提醒">×</button>
+    </div>
+    <p class="pending-description" id="pendingNoticeDescription"></p>
+    <div class="pending-list" id="pendingNoticeList" aria-label="未處理事項清單"></div>
+    <div class="pending-footer">
+      <button type="button" class="btn secondary" id="pendingNoticeLater">稍後查看</button>
+      <button type="button" class="btn primary" id="pendingNoticeViewAll">查看全部未處理</button>
+    </div>
+  </section>
+</div>
+
 <!-- =========================
      新增 / 編輯 Modal
 ========================= -->
@@ -1514,6 +1546,8 @@ let editingId = null;
 let currentUser = null;
 
 let selectedStatus = "";
+let pendingNoticeShownForUser = null;
+let pendingPreviousOverflow = "";
 
 const PARKING_STEPS = ["線上查詢是否未繳停車費","鉛筆寫上 姓名 單位地點","停車單正本繳交佩君"];
 const FINE_STEPS = ["掃描罰單","寄Mail給當地行政(附上掃描罰單檔案)，詢問是否本人行駛","確認後罰單上傳 EIP","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
@@ -2047,6 +2081,9 @@ async function register(){
 
 async function logout(){
 
+  closePendingNotice(false);
+  pendingNoticeShownForUser = null;
+
   const {
     error
   } =
@@ -2208,6 +2245,7 @@ async function loadWorks(){
 
 
   render();
+  showPendingNoticeOnce();
 
 }
 
@@ -3528,6 +3566,95 @@ content.addEventListener("change", async event => {
   }
   if(saveError){
     alert("流程儲存失敗，已還原勾選狀態：\n" + (saveError.message || "請稍後再試"));
+  }
+});
+
+
+/* 每次開啟或重新整理後，登入並載入成功時提醒一次。 */
+
+const pendingNoticeBg = document.getElementById("pendingNoticeBg");
+const pendingNoticeList = document.getElementById("pendingNoticeList");
+const pendingNoticeClose = document.getElementById("pendingNoticeClose");
+
+function showPendingNoticeOnce(){
+  if(!currentUser || pendingNoticeShownForUser === currentUser.id) return;
+  pendingNoticeShownForUser = currentUser.id;
+  const pendingItems = works.filter(item => normalizeStatus(item.status) === "未處理");
+  if(!pendingItems.length) return;
+  document.getElementById("pendingNoticeTitle").textContent =
+    "📋 " + pendingItems.length + " 項未處理事項";
+  document.getElementById("pendingNoticeDescription").textContent =
+    "點選事項可直接查看內容，也可以稍後再處理。";
+  pendingNoticeList.innerHTML = pendingItems.map(item => `
+    <button type="button" class="pending-item" data-pending-id="${esc(String(item.id))}">
+      <span class="pending-item-title">${esc(item.title || "未填標題")}</span>
+      <span class="pending-item-meta">
+        <span>📅 ${esc(item.date ? formatDate(item.date) : "未填日期")}</span>
+        <span class="tag" data-category="${esc(item.category || "其他")}">${esc(item.category || "其他")}</span>
+        <span class="tag status-tag" data-status="未處理">未處理</span>
+      </span>
+    </button>
+  `).join("");
+  pendingPreviousOverflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+  pendingNoticeBg.classList.add("show");
+  pendingNoticeClose.focus();
+}
+
+function closePendingNotice(restoreFocus = true){
+  if(!pendingNoticeBg.classList.contains("show")) return;
+  pendingNoticeBg.classList.remove("show");
+  document.body.style.overflow = pendingPreviousOverflow;
+  if(restoreFocus) document.getElementById("addBtn").focus({preventScroll:true});
+}
+
+function viewPendingItems(id = null){
+  closePendingNotice(false);
+  selectedStatus = "未處理";
+  searchInput.value = "";
+  searchCategory.value = "";
+  searchDate.value = "";
+  render();
+  const entry = id === null ? null
+    : [...content.querySelectorAll(".work-entry[data-work-id]")]
+      .find(row => row.dataset.workId === id);
+  if(entry){
+    entry.open = true;
+    entry.scrollIntoView({
+      behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      block:"center"
+    });
+    entry.querySelector(".entry-head")?.focus({preventScroll:true});
+  }else{
+    document.querySelector('[data-status-filter="未處理"]').focus({preventScroll:true});
+  }
+}
+
+pendingNoticeClose.addEventListener("click", () => closePendingNotice());
+document.getElementById("pendingNoticeLater").addEventListener("click", () => closePendingNotice());
+document.getElementById("pendingNoticeViewAll").addEventListener("click", () => viewPendingItems());
+pendingNoticeList.addEventListener("click", event => {
+  const button = event.target.closest("[data-pending-id]");
+  if(button) viewPendingItems(button.dataset.pendingId);
+});
+pendingNoticeBg.addEventListener("click", event => {
+  if(event.target === pendingNoticeBg) closePendingNotice();
+});
+document.addEventListener("keydown", event => {
+  if(!pendingNoticeBg.classList.contains("show")) return;
+  if(event.key === "Escape"){
+    event.preventDefault();
+    closePendingNotice();
+  }else if(event.key === "Tab"){
+    const buttons = [...pendingNoticeBg.querySelectorAll("button:not([disabled])")];
+    const first = buttons[0], last = buttons[buttons.length - 1];
+    if(event.shiftKey && document.activeElement === first){
+      event.preventDefault();
+      last.focus();
+    }else if(!event.shiftKey && document.activeElement === last){
+      event.preventDefault();
+      first.focus();
+    }
   }
 });
 
