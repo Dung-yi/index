@@ -1519,9 +1519,13 @@ const PARKING_STEPS = ["線上查詢是否未繳停車費","鉛筆寫上 姓名 
 const FINE_STEPS = ["掃描罰單","寄Mail給當地行政(附上掃描罰單檔案)，詢問是否本人行駛","確認後罰單上傳 EIP","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
 const FINE_COLUMNS = ["fine_scanned", "fine_emailed_admin", "fine_uploaded_eip", "fine_written_details", "fine_submitted_original"];
 
+const INSURANCE_STEPS = ["掃描正本","掃描檔放 信榕&怡蒨 資料夾","保險上傳 EIP","正本給芷婷","收據給怡蒨"];
+const INSURANCE_COLUMNS = ["insurance_scanned", "insurance_saved_folder", "insurance_uploaded_eip", "insurance_original_delivered", "insurance_receipt_delivered"];
+
 function workflowSteps(category){
   return category === "停車費" ? PARKING_STEPS
-    : category === "罰單" ? FINE_STEPS : [];
+    : category === "罰單" ? FINE_STEPS
+    : category === "保險" ? INSURANCE_STEPS : [];
 }
 
 function normalizeWorkflowSteps(category, steps){
@@ -1530,7 +1534,8 @@ function normalizeWorkflowSteps(category, steps){
 
 function workflowValues(item){
   return normalizeWorkflowSteps(item.category,
-    item.category === "罰單" ? item.fineWorkflow : item.parkingWorkflow);
+    item.category === "保險" ? item.insuranceWorkflow
+      : item.category === "罰單" ? item.fineWorkflow : item.parkingWorkflow);
 }
 
 function workflowStepStatus(category, steps){
@@ -1544,8 +1549,14 @@ function finePayload(steps){
   return Object.fromEntries(FINE_COLUMNS.map((column, index) => [column, checked[index]]));
 }
 
+function insurancePayload(steps){
+  const checked = normalizeWorkflowSteps("保險", steps);
+  return Object.fromEntries(INSURANCE_COLUMNS.map((column, index) => [column, checked[index]]));
+}
+
 function workflowPayload(category, steps){
-  return category === "罰單" ? finePayload(steps) : parkingPayload(steps);
+  return category === "保險" ? insurancePayload(steps)
+    : category === "罰單" ? finePayload(steps) : parkingPayload(steps);
 }
 
 const parkingPendingIds = new Set();
@@ -1667,6 +1678,15 @@ function modalParkingSteps(){
 function modalFineSteps(){
   return categoryInput.value === "罰單"
     ? modalWorkflowSteps() : normalizeWorkflowSteps("罰單", modalWorkflowDrafts["罰單"]);
+}
+
+function modalInsuranceSteps(){
+  return categoryInput.value === "保險"
+    ? modalWorkflowSteps() : normalizeWorkflowSteps("保險", modalWorkflowDrafts["保險"]);
+}
+
+function setModalInsuranceSteps(steps){
+  modalWorkflowDrafts["保險"] = normalizeWorkflowSteps("保險", steps);
 }
 
 function setModalParkingSteps(steps){
@@ -2177,6 +2197,8 @@ async function loadWorks(){
 
         fineWorkflow:FINE_COLUMNS.map(column => item[column] === true),
 
+        insuranceWorkflow:INSURANCE_COLUMNS.map(column => item[column] === true),
+
         content:item.content,
 
         createdAt:item.created_at
@@ -2445,6 +2467,7 @@ function openModal(id=null){
     statusInput.value = normalizeStatus(item.status);
     setModalParkingSteps(item.parkingWorkflow);
     setModalFineSteps(item.fineWorkflow);
+    setModalInsuranceSteps(item.insuranceWorkflow);
 
 
     contentInput.value =
@@ -2471,6 +2494,7 @@ function openModal(id=null){
     statusInput.value = "未處理";
     setModalParkingSteps([false, false, false]);
     setModalFineSteps([false, false, false, false, false]);
+    setModalInsuranceSteps([false, false, false, false, false]);
 
 
     contentInput.value =
@@ -2537,7 +2561,11 @@ async function saveWork(){
   const fineSteps = category === "罰單"
     ? modalFineSteps() : FINE_STEPS.map(() => false);
 
-  const activeSteps = category === "罰單" ? fineSteps : parkingSteps;
+  const insuranceSteps = category === "保險"
+    ? modalInsuranceSteps() : INSURANCE_STEPS.map(() => false);
+
+  const activeSteps = category === "保險" ? insuranceSteps
+    : category === "罰單" ? fineSteps : parkingSteps;
   const status = workflowSteps(category).length && activeSteps.every(Boolean)
     ? "已完成" : normalizeStatus(statusInput.value);
 
@@ -2592,6 +2620,7 @@ async function saveWork(){
 
           ...parkingPayload(parkingSteps),
           ...finePayload(fineSteps),
+          ...insurancePayload(insuranceSteps),
 
           content:
             workContent
@@ -2635,6 +2664,7 @@ async function saveWork(){
 
           ...parkingPayload(parkingSteps),
           ...finePayload(fineSteps),
+          ...insurancePayload(insuranceSteps),
 
           content:
             workContent
@@ -3477,7 +3507,8 @@ content.addEventListener("change", async event => {
       .single();
     if(error) throw error;
     if(currentUser?.id === savingUserId){
-      if(item.category === "罰單") item.fineWorkflow = nextSteps;
+      if(item.category === "保險") item.insuranceWorkflow = nextSteps;
+      else if(item.category === "罰單") item.fineWorkflow = nextSteps;
       else item.parkingWorkflow = nextSteps;
       item.status = nextStatus;
       if(nextStatus === "已完成") parkingUnlockedIds.delete(id);
