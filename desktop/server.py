@@ -33,7 +33,7 @@ STEPS = ['parking_checked_online', 'parking_written_details', 'parking_submitted
          'fine_scanned', 'fine_emailed_admin', 'fine_uploaded_eip', 'fine_written_details', 'fine_submitted_original',
          'insurance_scanned', 'insurance_saved_folder', 'insurance_uploaded_eip',
          'insurance_original_delivered', 'insurance_receipt_delivered']
-FIELDS = {'work_date', 'title', 'category', 'content', 'status', *STEPS}
+FIELDS = {'work_date', 'title', 'category', 'content', 'status', 'workflow_enabled', *STEPS}
 FAILURES = []
 
 @contextlib.contextmanager
@@ -84,7 +84,7 @@ def clean(value):
         raise ValueError('工作紀錄格式錯誤')
     result = {k: v for k, v in value.items() if k in FIELDS}
     for k, v in result.items():
-        if k in STEPS:
+        if k in STEPS or k == 'workflow_enabled':
             if not isinstance(v, bool):
                 raise ValueError('流程勾選格式錯誤')
         elif not isinstance(v, str) or len(v) > 200000:
@@ -96,7 +96,7 @@ def clean(value):
     return result
 
 def insert(c, value):
-    row = dict(work_date=dt.date.today().isoformat(), title='', content='', category='其他', status='未處理')
+    row = dict(work_date=dt.date.today().isoformat(), title='', content='', category='其他', status='未處理', workflow_enabled=True)
     row.update({k: False for k in STEPS})
     row.update(clean(value))
     if not (row['title'].strip() or row['content'].strip()):

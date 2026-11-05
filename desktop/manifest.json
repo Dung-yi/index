@@ -1,18 +1,18 @@
 {
   "app": "local-work-diary",
   "format": 1,
-  "version": "1.1.1",
-  "notes": "啟動成功後自動關閉啟動中心；失敗時保留提示，另提供管理入口。",
+  "version": "1.2.0",
+  "notes": "工作流程預設收合；新增及編輯工作可選擇是否啟用流程。",
   "files": {
     "diary.ico": "12b7b7a9d2a46397b4b9de639a5abaef88794e32af5bf0638af0f4a473adc702",
-    "index.html": "6a360075eba3ec818abe079655f490f6495c92c411f28f328e802a6c2e90e70b",
+    "index.html": "8d396ffdda728457bb1c1893009beadf887500c38c73c7afb040c9d221d9b95a",
     "launcher.py": "bea939ff74bfefec806830985f084206dd751273c8771108a1bb5a0148f94faa",
     "local-client.js": "31954e75960480a4307008306dd9d03bd28a19d55e5516deadb0f048391a3858",
     "migrate_cloud.py": "c2aac50f6acf5dad3fb2d6baa65f657c6cf7f5bd830db6e19a844f5a1d15a7e5",
     "panel.exe": "dcee7b397f2cae4ba153f21064947de73a45916c2a8ee259b7e3245662590140",
-    "server.py": "a29b6a7f5394abe892e86d92c6ee4e92d8035b58362434f7c65acb39ae5913ae",
+    "server.py": "927526a0209282e621c58a731615316f7d0da7c0b600ba362f1bf200ed2dcfcc",
     "update_core.py": "71fe7c9b2468e879cc325feb6e241bb43fb38100635995e9aacc99092e084d04",
-    "使用說明.txt": "2f2e3182f58ea4976bb7acd8b8dca5204e9b19570f3bc5f5f33512933d674a82",
+    "使用說明.txt": "be5e0f6e20ceea170ad069f31604e2e73cdf648a479f175900c352fc5dc8fa09",
     "啟動.cmd": "67fde2492b9c1e651ae07354b4a11f53d3c34ff56cbcccccdfa186998aeb82bb",
     "建立桌面捷徑.cmd": "8f7e522d412233b2b0cfeffc186095befa7d53c18b8ac2c7b1a0fcf639d5f981",
     "搬移原網站資料.cmd": "82f49078765eee90163a3199ceb7d64b3e69c31f3b5e199b78fa9f2bf87fca2c"

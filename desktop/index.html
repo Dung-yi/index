@@ -892,6 +892,15 @@ textarea{
 }
 
 .parking-workflow[hidden]{ display:none; }
+.workflow-option-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;color:#3730a3;}
+.workflow-enable{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;cursor:pointer;margin-left:auto;}
+.workflow-enable input{width:18px;height:18px;accent-color:#2563eb;}
+.workflow-disclosure>summary{padding:10px 0;cursor:pointer;font-weight:600;color:#3730a3;}
+.workflow-disclosure>summary:focus-visible{outline:3px solid #2563eb;outline-offset:3px;border-radius:4px;}
+.workflow-disclosure[hidden],#workflowDisabledHint[hidden]{display:none;}
+.workflow-disclosure.parking-workflow>summary{padding:0;}
+.workflow-disclosure.parking-workflow[open]>summary{margin-bottom:12px;}
+.workflow-disclosure .parking-workflow{margin-top:8px;}
 
 .parking-workflow legend{
   padding:0 5px;
@@ -1367,11 +1376,18 @@ textarea{
       </select>
     </div>
 
-    <fieldset id="parkingWorkflowInput" class="parking-workflow" hidden>
-      <legend id="workflowInputLegend">工作流程</legend>
-      <div id="workflowInputSteps"></div>
-      <p class="parking-help">全部步驟勾選後，工作進度會自動改為「已完成」。</p>
-    </fieldset>
+    <section id="parkingWorkflowInput" class="parking-workflow" hidden aria-labelledby="workflowInputLegend">
+      <div class="workflow-option-row">
+        <strong id="workflowInputLegend">工作流程</strong>
+        <label class="workflow-enable"><input id="workflowEnabledInput" type="checkbox" checked>啟用工作流程</label>
+      </div>
+      <details id="modalWorkflowDetails" class="workflow-disclosure">
+        <summary>展開／收合工作流程</summary>
+        <div id="workflowInputSteps"></div>
+        <p class="parking-help">全部步驟勾選後，工作進度會自動改為「已完成」。</p>
+      </details>
+      <p id="workflowDisabledHint" class="parking-help" hidden>未啟用工作流程，請自行選擇工作進度。原有勾選會保留。</p>
+    </section>
 
     <div class="group">
 
@@ -1582,9 +1598,24 @@ const parkingWorkflowInput = document.getElementById("parkingWorkflowInput");
 
 let modalWorkflowCategory = null;
 let modalWorkflowDrafts = {};
+let modalWorkflowEnabledDrafts = {};
+const workflowEnabledInput = document.getElementById("workflowEnabledInput");
+const modalWorkflowDetails = document.getElementById("modalWorkflowDetails");
+
+function hasEnabledWorkflow(item){
+  return workflowSteps(item.category).length > 0 && item.workflowEnabled !== false;
+}
+
+function syncModalWorkflowEnabled(){
+  const enabled = workflowEnabledInput.checked;
+  modalWorkflowDetails.hidden = !enabled;
+  if(!enabled) modalWorkflowDetails.open = false;
+  document.getElementById("workflowDisabledHint").hidden = enabled;
+  parkingWorkflowInput.querySelectorAll("[data-modal-workflow-step]").forEach(input => {input.disabled = !enabled;});
+}
 
 function modalWorkflowSteps(){
-  return [...parkingWorkflowInput.querySelectorAll("input[type=checkbox]")]
+  return [...parkingWorkflowInput.querySelectorAll("[data-modal-workflow-step]")]
     .map(input => input.checked);
 }
 
@@ -1618,6 +1649,7 @@ function setModalFineSteps(steps){
 function updateParkingVisibility(){
   if(modalWorkflowCategory){
     modalWorkflowDrafts[modalWorkflowCategory] = modalWorkflowSteps();
+    modalWorkflowEnabledDrafts[modalWorkflowCategory] = workflowEnabledInput.checked;
   }
   const category = categoryInput.value;
   const steps = workflowSteps(category);
@@ -1629,7 +1661,10 @@ function updateParkingVisibility(){
   document.getElementById("workflowInputSteps").innerHTML = steps.map((step, index) =>
     `<label class="parking-step"><input type="checkbox" data-modal-workflow-step="${index}" ${checked[index] ? "checked" : ""}><span>${index + 1}. ${esc(step)}</span></label>`
   ).join("");
-  if(checked.every(Boolean)) statusInput.value = "已完成";
+  workflowEnabledInput.checked = modalWorkflowEnabledDrafts[category] !== false;
+  modalWorkflowDetails.open = false;
+  syncModalWorkflowEnabled();
+  if(workflowEnabledInput.checked && checked.every(Boolean)) statusInput.value = "已完成";
 }
 
 const contentInput =
@@ -2116,6 +2151,8 @@ async function loadWorks(){
           item.parking_submitted_original === true
         ],
 
+        workflowEnabled:item.workflow_enabled !== false,
+
         fineWorkflow:FINE_COLUMNS.map(column => item[column] === true),
 
         insuranceWorkflow:INSURANCE_COLUMNS.map(column => item[column] === true),
@@ -2346,6 +2383,8 @@ function openModal(id=null){
 
   modalWorkflowCategory = null;
   modalWorkflowDrafts = {};
+  modalWorkflowEnabledDrafts = {};
+  modalWorkflowDetails.open = false;
 
   editingId = id;
 
@@ -2387,6 +2426,7 @@ function openModal(id=null){
       item.category || "其他";
 
     statusInput.value = normalizeStatus(item.status);
+    modalWorkflowEnabledDrafts[item.category] = item.workflowEnabled !== false;
     setModalParkingSteps(item.parkingWorkflow);
     setModalFineSteps(item.fineWorkflow);
     setModalInsuranceSteps(item.insuranceWorkflow);
@@ -2488,7 +2528,8 @@ async function saveWork(){
 
   const activeSteps = category === "保險" ? insuranceSteps
     : category === "罰單" ? fineSteps : parkingSteps;
-  const status = workflowSteps(category).length && activeSteps.every(Boolean)
+  const workflowEnabled = workflowSteps(category).length > 0 && workflowEnabledInput.checked;
+  const status = workflowEnabled && activeSteps.every(Boolean)
     ? "已完成" : normalizeStatus(statusInput.value);
 
   const workContent =
@@ -2540,6 +2581,7 @@ async function saveWork(){
           status:
             status,
 
+          workflow_enabled:workflowEnabled,
           ...parkingPayload(parkingSteps),
           ...finePayload(fineSteps),
           ...insurancePayload(insuranceSteps),
@@ -2584,6 +2626,7 @@ async function saveWork(){
           status:
             status,
 
+          workflow_enabled:workflowEnabled,
           ...parkingPayload(parkingSteps),
           ...finePayload(fineSteps),
           ...insurancePayload(insuranceSteps),
@@ -2988,9 +3031,9 @@ function render(options = {}){
 
 
 
-                ${workflowSteps(item.category).length ? `
-                  <fieldset class="parking-workflow">
-                    <legend>${esc(item.category)}工作流程<span class="parking-progress">${workflowValues(item).filter(Boolean).length} / ${workflowSteps(item.category).length}</span></legend>
+                ${hasEnabledWorkflow(item) ? `
+                  <details class="parking-workflow workflow-disclosure" data-workflow-disclosure>
+                    <summary>${esc(item.category)}工作流程<span class="parking-progress">${workflowValues(item).filter(Boolean).length} / ${workflowSteps(item.category).length}</span></summary>
                     <div class="parking-lock-row">
                       <button type="button" class="parking-lock-button" data-parking-lock
                         aria-pressed="${parkingUnlockedIds.has(String(item.id))}"
@@ -3008,7 +3051,7 @@ function render(options = {}){
                       </label>
                     `).join("")}
                     <p class="parking-help">勾選後自動儲存，全部完成會自動標為「已完成」。</p>
-                  </fieldset>
+                  </details>
                 ` : ""}
 
                 <div class="body">${highlight(item.content, keyword)}</div>
@@ -3299,8 +3342,14 @@ authPassword.addEventListener(
 
 categoryInput.addEventListener("change", updateParkingVisibility);
 
-parkingWorkflowInput.addEventListener("change", () => {
-  if(workflowSteps(categoryInput.value).length){
+parkingWorkflowInput.addEventListener("change", event => {
+  if(event.target === workflowEnabledInput){
+    modalWorkflowEnabledDrafts[categoryInput.value] = workflowEnabledInput.checked;
+    syncModalWorkflowEnabled();
+    if(workflowEnabledInput.checked && modalWorkflowSteps().every(Boolean)) statusInput.value = "已完成";
+    return;
+  }
+  if(workflowEnabledInput.checked && workflowSteps(categoryInput.value).length){
     statusInput.value = workflowStepStatus(categoryInput.value, modalWorkflowSteps());
   }
 });
@@ -3310,12 +3359,17 @@ function renderKeepingEntryState(){
     [...content.querySelectorAll(".work-entry[data-work-id]")]
       .map(entry => [entry.dataset.workId, entry.open])
   );
+  const openWorkflows = new Set(
+    [...content.querySelectorAll("[data-workflow-disclosure][open]")].map(details => details.closest(".work-entry").dataset.workId)
+  );
   const scrollTop = window.scrollY;
   render({preserveWorkflowUnlocks:true});
   content.querySelectorAll(".work-entry[data-work-id]").forEach(entry => {
     if(openEntries.has(entry.dataset.workId)){
       entry.open = openEntries.get(entry.dataset.workId);
     }
+    const workflow = entry.querySelector("[data-workflow-disclosure]");
+    if(workflow && openWorkflows.has(entry.dataset.workId)) workflow.open = true;
   });
   window.scrollTo({top:scrollTop, behavior:"instant"});
 }
@@ -3351,8 +3405,9 @@ content.addEventListener("click", event => {
 });
 
 content.addEventListener("toggle", event => {
-  const entry = event.target;
-  if(entry.matches(".work-entry") && !entry.open){
+  const target = event.target;
+  const entry = target.matches("[data-workflow-disclosure]") ? target.closest(".work-entry") : target;
+  if(entry?.matches(".work-entry") && !target.open){
     parkingUnlockedIds.delete(entry.dataset.workId);
     refreshParkingLock(entry);
   }
@@ -3364,7 +3419,7 @@ content.addEventListener("change", async event => {
   const entry = checkbox.closest(".work-entry");
   const id = entry.dataset.workId;
   const item = works.find(work => String(work.id) === id);
-  if(!item || !workflowSteps(item.category).length || parkingPendingIds.has(id)) return;
+  if(!item || !hasEnabledWorkflow(item) || parkingPendingIds.has(id)) return;
 
   if(!parkingUnlockedIds.has(id)){
     checkbox.checked = workflowValues(item)[Number(checkbox.dataset.parkingStep)] || false;
