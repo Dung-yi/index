@@ -1,0 +1,20 @@
+{
+  "app": "local-work-diary",
+  "format": 1,
+  "version": "1.1.0",
+  "notes": "桌面啟動中心、自動開啟網頁、更新驗證、備份及主機控制。",
+  "files": {
+    "diary.ico": "12b7b7a9d2a46397b4b9de639a5abaef88794e32af5bf0638af0f4a473adc702",
+    "index.html": "6a360075eba3ec818abe079655f490f6495c92c411f28f328e802a6c2e90e70b",
+    "launcher.py": "3a4771878092c980e804759710526fc11b24cc36338d2bc60c023f088a1ab614",
+    "local-client.js": "31954e75960480a4307008306dd9d03bd28a19d55e5516deadb0f048391a3858",
+    "migrate_cloud.py": "c2aac50f6acf5dad3fb2d6baa65f657c6cf7f5bd830db6e19a844f5a1d15a7e5",
+    "panel.exe": "54d3a338f3d753d59f98e1d35558e72cf3eb051a35b2961c1d186366443569b2",
+    "server.py": "a29b6a7f5394abe892e86d92c6ee4e92d8035b58362434f7c65acb39ae5913ae",
+    "update_core.py": "71fe7c9b2468e879cc325feb6e241bb43fb38100635995e9aacc99092e084d04",
+    "使用說明.txt": "7859b512e3997bfd3602b11e33e2cf01d9b1befc7342c15850022ed8b09be817",
+    "啟動.cmd": "67fde2492b9c1e651ae07354b4a11f53d3c34ff56cbcccccdfa186998aeb82bb",
+    "建立桌面捷徑.cmd": "8f7e522d412233b2b0cfeffc186095befa7d53c18b8ac2c7b1a0fcf639d5f981",
+    "搬移原網站資料.cmd": "82f49078765eee90163a3199ceb7d64b3e69c31f3b5e199b78fa9f2bf87fca2c"
+  }
+}

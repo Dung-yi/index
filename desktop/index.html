@@ -1,0 +1,3562 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日工作日誌</title>
+
+<style>
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+  background:#f3f5f8;
+  color:#1f2937;
+}
+
+button,
+input,
+select,
+textarea{
+  font-family:inherit;
+}
+
+.app{
+  width:100%;
+  max-width:none;
+  margin:0;
+  min-height:100vh;
+}
+
+
+/* =========================
+   登入畫面
+========================= */
+
+.auth-screen{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:linear-gradient(135deg,#172033,#34435e);
+}
+
+.auth-box{
+  width:100%;
+  max-width:420px;
+  background:#fff;
+  border-radius:20px;
+  padding:30px 24px;
+  box-shadow:0 20px 50px #0004;
+}
+
+.auth-box h1{
+  margin:0;
+  font-size:26px;
+  text-align:center;
+}
+
+.auth-subtitle{
+  text-align:center;
+  color:#6b7280;
+  margin:8px 0 25px;
+  font-size:14px;
+}
+
+.auth-group{
+  margin-bottom:15px;
+}
+
+.auth-group label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+}
+
+.auth-group input{
+  width:100%;
+  padding:13px;
+  border:1px solid #d1d5db;
+  border-radius:10px;
+  font-size:15px;
+  outline:none;
+}
+
+.auth-group input:focus{
+  border-color:#2563eb;
+}
+
+.auth-buttons{
+  display:flex;
+  gap:10px;
+  margin-top:18px;
+}
+
+.auth-buttons button{
+  flex:1;
+}
+
+.auth-message{
+  min-height:20px;
+  margin-top:15px;
+  text-align:center;
+  font-size:13px;
+  color:#6b7280;
+}
+
+.auth-message.error{
+  color:#dc2626;
+}
+
+.auth-message.success{
+  color:#16a34a;
+}
+
+
+/* =========================
+   Header
+========================= */
+
+.header{
+  background:linear-gradient(135deg,#172033,#34435e);
+  color:#fff;
+  padding:22px 20px;
+}
+
+.header-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:15px;
+}
+
+.header h1{
+  margin:0;
+  font-size:25px;
+}
+
+.header p{
+  margin:8px 0 0;
+  color:#d7deea;
+  font-size:14px;
+}
+
+.user-area{
+  text-align:right;
+  flex-shrink:0;
+}
+
+.user-email{
+  font-size:12px;
+  color:#d7deea;
+  margin-bottom:6px;
+  max-width:220px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.logout-btn{
+  border:1px solid #ffffff55;
+  background:#ffffff12;
+  color:#fff;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-size:12px;
+}
+
+
+/* =========================
+   Search
+========================= */
+
+.workspace-layout{
+  display:grid;
+  grid-template-columns:clamp(156px,12vw,200px) minmax(0,1fr);
+  gap:12px;
+  padding-top:16px;
+}
+
+.workspace-main{
+  min-width:0;
+}
+
+.workspace-sidebar{
+  position:sticky;
+  top:16px;
+  align-self:start;
+  padding-left:16px;
+}
+
+.workspace-sidebar h2{
+  margin:0 0 10px;
+  font-size:15px;
+  color:#334155;
+}
+
+.status-menu{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+}
+
+.status-filter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:44px;
+  padding:11px 12px;
+  border:1px solid #cbd5e1;
+  border-radius:11px;
+  background:#fff;
+  color:#334155;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.status-filter[aria-pressed="true"]{
+  outline:2px solid #2563eb;
+  outline-offset:2px;
+}
+
+.status-filter:focus-visible{
+  outline:3px solid #1e40af;
+  outline-offset:3px;
+}
+
+.status-count{
+  font-size:12px;
+  opacity:.85;
+}
+
+.entry-head > .status-tag{
+  flex-shrink:0;
+  white-space:nowrap;
+}
+
+.entry-text{
+  flex:1;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.entry-title{
+  display:inline;
+}
+
+.entry-labels{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-left:6px;
+  vertical-align:middle;
+}
+
+.entry-labels .tag{
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.status-tag[data-status="已完成"],
+.status-filter[data-status-filter="已完成"]{
+  background:#dcfce7;
+  color:#166534;
+  border-color:#86efac;
+}
+
+.status-tag[data-status="未處理"],
+.status-filter[data-status-filter="未處理"]{
+  background:#fee2e2;
+  color:#991b1b;
+  border-color:#fca5a5;
+}
+
+.status-tag[data-status="處理中"],
+.status-filter[data-status-filter="處理中"]{
+  background:#fef3c7;
+  color:#92400e;
+  border-color:#fcd34d;
+}
+
+@media(max-width:760px){
+  .workspace-layout{
+    grid-template-columns:minmax(0,1fr);
+    padding-top:12px;
+  }
+  .workspace-sidebar{
+    position:static;
+    padding:0 16px;
+  }
+  .status-menu{
+    flex-direction:row;
+    flex-wrap:wrap;
+  }
+  .status-filter{
+    flex:1 1 auto;
+  }
+  .entry-head{
+    flex-wrap:wrap;
+  }
+}
+
+.search{
+  background:#fff;
+  padding:16px;
+  margin-bottom:16px;
+  border-bottom:1px solid #e5e7eb;
+}
+
+.search-row{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.search-input-wrap{
+  position:relative;
+  flex:0 1 320px;
+  min-width:190px;
+  max-width:360px;
+}
+
+.search-input-wrap input{
+  width:100%;
+  height:46px;
+  padding:12px 14px;
+  border:1px solid #d1d5db;
+  border-radius:11px;
+  font-size:14px;
+  outline:0;
+}
+
+.search-input-wrap input:focus{
+  border-color:#2563eb;
+  box-shadow:0 0 0 2px #dbeafe;
+}
+
+.search-control-group{
+  display:flex;
+  align-items:stretch;
+  flex:0 1 230px;
+  min-width:210px;
+  height:46px;
+  border:1px solid #d1d5db;
+  border-radius:11px;
+  background:#fff;
+}
+
+.search-date-group{
+  flex-basis:235px;
+  min-width:215px;
+}
+
+.search-control-group:focus-within{
+  border-color:#2563eb;
+  box-shadow:0 0 0 2px #dbeafe;
+}
+
+.search-control-group select,
+.search-control-group input{
+  flex:1;
+  min-width:0;
+  width:100%;
+  padding:10px 12px;
+  border:0;
+  border-radius:10px 0 0 10px;
+  background:#fff;
+  font-size:14px;
+  color:#1f2937;
+  outline:0;
+  cursor:pointer;
+}
+
+.search-control-action{
+  flex-shrink:0;
+  padding:0 13px;
+  border:0;
+  border-left:1px solid #e2e8f0;
+  border-radius:0 10px 10px 0;
+  background:#f8fafc;
+  color:#475569;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.search-control-action:hover{background:#e2e8f0;}
+.search-control-action:focus-visible{outline:2px solid #2563eb;outline-offset:-3px;}
+.today-action{background:#eff6ff;color:#1d4ed8;}
+.today-action:hover{background:#dbeafe;}
+
+.search-row > #addBtn{
+  flex:0 0 auto;
+  width:auto;
+  min-height:46px;
+  padding:12px 20px;
+}
+
+/* =========================
+   Toolbar
+========================= */
+
+.toolbar{
+  display:flex;
+  gap:10px;
+  padding:16px;
+}
+
+.btn{
+  border:0;
+  border-radius:11px;
+  padding:12px 16px;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.btn:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.primary{
+  background:#2563eb;
+  color:#fff;
+  flex:1;
+  font-weight:600;
+}
+
+.secondary{
+  background:#fff;
+  border:1px solid #d1d5db;
+}
+
+.import-btn{
+  background:#ecfdf5;
+  color:#047857;
+  border:1px solid #a7f3d0;
+}
+
+
+/* =========================
+   Content
+========================= */
+
+.content{
+  padding:0 16px 100px;
+}
+
+.back-to-top{
+  position:fixed;
+  right:calc(24px + env(safe-area-inset-right, 0px));
+  bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index:5;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:52px;
+  height:52px;
+  padding:0;
+  border:1px solid #1d4ed8;
+  border-radius:18px;
+  background:linear-gradient(145deg,#2563eb,#1d4ed8);
+  color:#fff;
+  box-shadow:0 6px 18px #1d4ed84d;
+  cursor:pointer;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+
+.back-to-top:hover{
+  transform:translateY(-3px);
+  box-shadow:0 9px 22px #1d4ed866;
+}
+
+.back-to-top:focus-visible{
+  outline:3px solid #1e3a8a;
+  outline-offset:4px;
+}
+
+.back-to-top svg{
+  width:25px;
+  height:25px;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .back-to-top{
+    transition:none;
+  }
+  .back-to-top:hover{
+    transform:none;
+  }
+}
+
+.date-section{
+  margin-bottom:20px;
+}
+
+.date-head{
+  width:100%;
+  text-align:left;
+  font-family:inherit;
+  color:inherit;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  padding:14px;
+  background:#fff;
+  border:1px solid #d1d5db;
+  border-radius:12px;
+  cursor:pointer;
+  list-style:none;
+}
+
+.date-head::-webkit-details-marker{
+  display:none;
+}
+
+.date-head::before{
+  content:"▶";
+  color:#475569;
+  font-size:12px;
+  flex-shrink:0;
+  margin-top:5px;
+}
+
+.date-head[aria-expanded="true"]{
+  margin-bottom:10px;
+}
+
+.date-head[aria-expanded="true"]::before{
+  transform:rotate(90deg);
+}
+
+.date-head:hover{
+  background:#f8fafc;
+}
+
+.date-head:focus-visible{
+  outline:3px solid #2563eb;
+  outline-offset:3px;
+}
+
+.date-summary{
+  flex:1;
+  min-width:0;
+}
+
+.date-heading{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.date-head .date-label{
+  font-size:18px;
+  font-weight:700;
+  margin:0;
+  flex:1;
+  min-width:0;
+}
+
+.date-head .badge{
+  flex-shrink:0;
+}
+
+.badge{
+  font-size:12px;
+  background:#e8efff;
+  color:#2563eb;
+  padding:5px 9px;
+  border-radius:20px;
+}
+
+.card{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:10px;
+  box-shadow:0 2px 5px #00000008;
+}
+
+.work-entry{ padding:0; }
+
+.entry-head{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  padding:12px 14px;
+  cursor:pointer;
+  list-style:none;
+  color:#1e3a8a;
+  font-size:15px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.entry-head::-webkit-details-marker{ display:none; }
+
+.entry-head::before{
+  content:"▶";
+  color:#475569;
+  font-size:10px;
+  flex-shrink:0;
+}
+
+.work-entry[open] > .entry-head::before{ transform:rotate(90deg); }
+
+.entry-head:hover{
+  background:#eff6ff;
+  border-radius:12px;
+}
+
+.entry-head:focus-visible{
+  outline:3px solid #2563eb;
+  outline-offset:2px;
+  border-radius:12px;
+}
+
+.work-entry:not([open]){
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+  margin-bottom:2px;
+}
+
+.work-entry:not([open]) > .entry-head{
+  padding-top:6px;
+  padding-bottom:6px;
+}
+
+.work-entry[open] > .entry-head{
+  font-weight:700;
+  border-bottom:1px solid #e5e7eb;
+}
+
+.entry-content{ padding:14px 16px 16px; }
+
+.meta{
+  font-size:12px;
+  color:#6b7280;
+  margin-bottom:8px;
+}
+
+.title{
+  font-size:17px;
+  font-weight:700;
+  margin-bottom:9px;
+}
+
+.tags{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.tag{
+  font-size:12px;
+  font-weight:600;
+  background:#f1f5f9;
+  color:#334155;
+  border:1px solid #cbd5e1;
+  padding:5px 8px;
+  border-radius:7px;
+}
+
+.tag[data-category="驗車"]{
+  background:#dbeafe;
+  color:#1e40af;
+  border-color:#93c5fd;
+}
+
+.tag[data-category="eTAG"]{
+  background:#dcfce7;
+  color:#166534;
+  border-color:#86efac;
+}
+
+.tag[data-category="加油卡"]{
+  background:#ffedd5;
+  color:#9a3412;
+  border-color:#fdba74;
+}
+
+.tag[data-category="罰單"]{
+  background:#fee2e2;
+  color:#991b1b;
+  border-color:#fca5a5;
+}
+
+.tag[data-category="保險"]{
+  background:#f3e8ff;
+  color:#6b21a8;
+  border-color:#d8b4fe;
+}
+
+.tag[data-category="新購車"]{
+  background:#ccfbf1;
+  color:#115e59;
+  border-color:#5eead4;
+}
+
+.tag[data-category="新租賃"]{
+  background:#fce7f3;
+  color:#9d174d;
+  border-color:#f9a8d4;
+}
+
+.tag[data-category="報廢"]{
+  background:#ede0d4;
+  color:#5e3023;
+  border-color:#cba88a;
+}
+
+.tag[data-category="停車費"]{
+  background:#e0e7ff;
+  color:#3730a3;
+  border-color:#a5b4fc;
+}
+
+.tag[data-category="里程"]{
+  background:#ecfccb;
+  color:#365314;
+  border-color:#a3e635;
+}
+
+.tag[data-category="其他"]{
+  background:#f1f5f9;
+  color:#334155;
+  border-color:#cbd5e1;
+}
+
+
+/* =========================
+   工作內容
+========================= */
+
+.body{
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  line-height:1.65;
+  color:#4b5563;
+  font-size:17px;
+  width:100%;
+  margin:0;
+  text-align:left;
+}
+
+
+.keyword-highlight{
+  background:#fde047;
+  color:#111827;
+  padding:1px 3px;
+  border-radius:4px;
+  font-weight:700;
+}
+
+.actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:14px;
+}
+
+.edit{
+  background:#eff6ff;
+  color:#2563eb;
+}
+
+.del{
+  background:#fff1f2;
+  color:#dc2626;
+}
+
+.empty{
+  text-align:center;
+  padding:60px 20px;
+  color:#9ca3af;
+}
+
+.empty .icon{
+  font-size:44px;
+  margin-bottom:10px;
+}
+
+
+/* =========================
+   Loading
+========================= */
+
+.loading{
+  text-align:center;
+  padding:60px 20px;
+  color:#6b7280;
+}
+
+.spinner{
+  width:32px;
+  height:32px;
+  border:3px solid #e5e7eb;
+  border-top-color:#2563eb;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:0 auto 15px;
+}
+
+@keyframes spin{
+  to{
+    transform:rotate(360deg);
+  }
+}
+
+
+/* =========================
+   Modal
+========================= */
+
+.modal-bg{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#0008;
+  z-index:10;
+  padding:18px;
+  align-items:center;
+  justify-content:center;
+}
+
+.modal-bg.show{
+  display:flex;
+}
+
+.modal{
+  background:#fff;
+  width:100%;
+  max-width:560px;
+  max-height:92vh;
+  overflow:auto;
+  border-radius:18px;
+  padding:22px;
+}
+
+.modal h2{
+  margin:0 0 18px;
+}
+
+.group{
+  margin-bottom:14px;
+}
+
+.group label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+}
+
+.group input,
+.group select,
+.group textarea{
+  width:100%;
+  padding:11px 12px;
+  border:1px solid #d1d5db;
+  border-radius:10px;
+  font:inherit;
+  outline:0;
+}
+
+.group textarea{
+  min-height:160px;
+  resize:vertical;
+}
+
+.parking-workflow{
+  margin:0 0 16px;
+  padding:14px;
+  border:1px solid #a5b4fc;
+  border-radius:12px;
+  background:#eef2ff;
+  min-width:0;
+}
+
+.parking-workflow[hidden]{ display:none; }
+
+.parking-workflow legend{
+  padding:0 5px;
+  font-size:14px;
+  font-weight:700;
+  color:#3730a3;
+}
+
+.parking-step{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin:10px 0;
+  font-size:14px;
+  line-height:1.6;
+  color:#334155;
+  cursor:pointer;
+}
+
+.parking-step input[type="checkbox"]{
+  width:19px;
+  height:19px;
+  margin:2px 0 0;
+  flex-shrink:0;
+  accent-color:#2563eb;
+  cursor:pointer;
+}
+
+.parking-step input:checked + span{
+  color:#166534;
+}
+
+.parking-help{
+  margin:8px 0 0;
+  font-size:12px;
+  color:#475569;
+  line-height:1.6;
+}
+
+.parking-lock-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:4px 0 10px;}
+.parking-lock-button{min-height:40px;padding:8px 12px;border:1px solid #818cf8;border-radius:9px;background:#fff;color:#3730a3;font-size:13px;font-weight:600;cursor:pointer;}
+.parking-lock-button[aria-pressed="true"]{background:#e0e7ff;}
+.parking-lock-button:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
+.parking-lock-button:disabled{opacity:.6;cursor:wait;}
+.parking-lock-hint{color:#475569;font-size:12px;}
+.parking-step:has(input:disabled){cursor:default;}
+.parking-step input[type="checkbox"]:disabled{cursor:not-allowed;}
+
+.parking-progress{
+  display:inline-block;
+  margin-left:6px;
+  font-size:12px;
+  font-weight:600;
+  color:#4338ca;
+}
+
+.pending-overlay{z-index:30;}
+.pending-modal{width:100%;max-width:560px;}
+.pending-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;}
+.pending-title-row h2{margin:0;font-size:21px;color:#1e293b;}
+.pending-close{width:36px;height:36px;flex-shrink:0;border:0;border-radius:10px;background:#f1f5f9;color:#475569;font-size:24px;cursor:pointer;}
+.pending-description{margin:8px 0 16px;color:#64748b;font-size:14px;line-height:1.6;}
+.pending-list{display:grid;gap:9px;max-height:45vh;overflow-y:auto;padding:3px;}
+.pending-item{display:block;width:100%;padding:13px;text-align:left;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;color:#1e293b;cursor:pointer;}
+.pending-item:hover{border-color:#93c5fd;background:#eff6ff;}
+.pending-item-title{display:block;font-size:15px;font-weight:600;overflow-wrap:anywhere;line-height:1.5;}
+.pending-item-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:7px;font-size:12px;color:#64748b;}
+.pending-footer{display:flex;gap:10px;margin-top:18px;}
+.pending-footer .btn{flex:1;}
+.pending-close:focus-visible,.pending-item:focus-visible{outline:3px solid #2563eb;outline-offset:2px;}
+
+.modal-actions{
+  display:flex;
+  gap:10px;
+}
+
+.modal-actions button{
+  flex:1;
+}
+
+
+/* =========================
+   Mobile
+========================= */
+
+@media(max-width:600px){
+
+  .header-top{
+    flex-direction:column;
+  }
+
+  .user-area{
+    width:100%;
+    text-align:left;
+  }
+
+  .user-email{
+    max-width:100%;
+  }
+
+  .primary{
+    width:100%;
+  }
+
+  .auth-box{
+    padding:25px 20px;
+  }
+
+  .search-row{
+    flex-wrap:wrap;
+  }
+
+  .search-input-wrap{
+    flex:1 1 100%;
+    max-width:none;
+    min-width:0;
+  }
+
+  .search-control-group{
+    flex:1 1 220px;
+    min-width:0;
+  }
+
+  .search-row > #addBtn{
+    flex:1 1 100%;
+    width:100%;
+  }
+
+  .body{
+    font-size:17px;
+    width:100%;
+    margin:0;
+    text-align:left;
+  }
+
+  .title{
+    font-size:17px;
+  }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     登入畫面
+========================= -->
+
+<div id="authScreen" class="auth-screen">
+
+  <div class="auth-box">
+
+    <h1>📋 每日工作日誌</h1>
+
+    <div class="auth-subtitle">
+      本機工作日誌
+    </div>
+
+    <div class="auth-group">
+
+      <label>📧 Email</label>
+
+      <input
+        type="email"
+        id="authEmail"
+        placeholder="請輸入 Email"
+        autocomplete="email"
+      >
+
+    </div>
+
+
+    <div class="auth-group">
+
+      <label>🔐 密碼</label>
+
+      <input
+        type="password"
+        id="authPassword"
+        placeholder="請輸入密碼"
+        autocomplete="current-password"
+      >
+
+    </div>
+
+
+    <div class="auth-buttons">
+
+      <button
+        class="btn primary"
+        id="loginBtn"
+      >
+        登入
+      </button>
+
+      <button
+        class="btn secondary"
+        id="registerBtn" style="display:none"
+      >
+        建立帳號
+      </button>
+
+    </div>
+
+
+    <div
+      id="authMessage"
+      class="auth-message"
+    ></div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================
+     工作日誌主畫面
+========================= -->
+
+<div
+  class="app"
+  id="app"
+  style="display:none;"
+>
+
+  <header class="header">
+
+    <div class="header-top">
+
+      <div>
+
+        <h1>📋 每日工作日誌</h1>
+
+        <p id="todayText"></p>
+
+      </div>
+
+
+      <div class="user-area">
+
+        <div
+          class="user-email"
+          id="userEmail"
+        ></div>
+
+        <button
+          class="logout-btn"
+          id="logoutBtn"
+        >
+          登出
+        </button>
+<a href="/api/export" class="logout-btn" style="display:inline-block;text-decoration:none;margin-top:8px">下載資料備份</a>
+
+      </div>
+
+    </div>
+
+  </header>
+
+  <div class="workspace-layout">
+    <aside class="workspace-sidebar" aria-label="依工作進度篩選">
+      <h2>工作進度</h2>
+      <nav class="status-menu" aria-label="工作進度">
+        <button type="button" class="status-filter" data-status-filter=""
+          aria-pressed="true">全部<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="已完成"
+          aria-pressed="false">已完成<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="未處理"
+          aria-pressed="false">未處理<span class="status-count">0</span></button>
+        <button type="button" class="status-filter" data-status-filter="處理中"
+          aria-pressed="false">處理中<span class="status-count">0</span></button>
+      </nav>
+    </aside>
+    <div class="workspace-main">
+
+
+
+  <!-- =========================
+       搜尋
+  ========================= -->
+
+  <div class="search">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <input type="search" id="searchInput" aria-label="搜尋工作紀錄"
+          placeholder="🔍 搜尋日期、標題、工作內容...">
+      </div>
+      <div class="search-control-group" role="group" aria-label="工作分類篩選">
+      <select id="searchCategory">
+
+        <option value="">
+          📂 全部分類
+        </option>
+
+        <option value="驗車">
+          驗車
+        </option>
+
+        <option value="eTAG">
+          eTAG
+        </option>
+
+        <option value="加油卡">
+          加油卡
+        </option>
+
+        <option value="罰單">
+          罰單
+        </option>
+
+        <option value="保險">
+          保險
+        </option>
+
+        <option value="新購車">
+          新購車
+        </option>
+
+        <option value="新租賃">
+          新租賃
+        </option>
+
+        <option value="報廢">
+          報廢
+        </option>
+
+        <option value="停車費">
+          停車費
+        </option>
+
+        <option value="里程">里程</option>
+
+        <option value="其他">
+          其他
+        </option>
+
+      </select>
+        <button type="button" class="search-control-action" id="clearCategoryBtn"
+          aria-label="清除所有篩選" title="清除搜尋、分類、日期及工作進度篩選">清除</button>
+      </div>
+      <div class="search-control-group search-date-group" role="group" aria-label="日期篩選">
+        <input type="date" id="searchDate" title="選擇日期篩選" aria-label="選擇日期篩選">
+        <button type="button" class="search-control-action today-action" id="todayBtn"
+          title="選擇今天日期">今天</button>
+      </div>
+      <button type="button" class="btn primary" id="addBtn">＋ 新增工作內容</button>
+      <button type="button" class="btn import-btn" id="importBtn" style="display:none;">☁️ 匯入舊資料</button>
+    </div>
+  </div>
+
+  <main
+    class="content"
+    id="content"
+  ></main>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    id="backToTopBtn"
+    class="back-to-top"
+    aria-label="返回最上方"
+    title="返回最上方"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+      aria-hidden="true" focusable="false">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+  </button>
+
+</div>
+
+
+
+<!-- 開啟網頁後的未處理事項提醒 -->
+<div class="modal-bg pending-overlay" id="pendingNoticeBg">
+  <section class="modal pending-modal" role="dialog" aria-modal="true"
+    aria-labelledby="pendingNoticeTitle" aria-describedby="pendingNoticeDescription">
+    <div class="pending-title-row">
+      <h2 id="pendingNoticeTitle">📋 未處理事項</h2>
+      <button type="button" class="pending-close" id="pendingNoticeClose" aria-label="關閉未處理事項提醒">×</button>
+    </div>
+    <p class="pending-description" id="pendingNoticeDescription"></p>
+    <div class="pending-list" id="pendingNoticeList" aria-label="未處理事項清單"></div>
+    <div class="pending-footer">
+      <button type="button" class="btn secondary" id="pendingNoticeLater">稍後查看</button>
+      <button type="button" class="btn primary" id="pendingNoticeViewAll">查看全部未處理</button>
+    </div>
+  </section>
+</div>
+
+<!-- =========================
+     新增 / 編輯 Modal
+========================= -->
+
+<div
+  class="modal-bg"
+  id="modalBg"
+>
+
+  <div class="modal">
+
+    <h2 id="modalTitle">
+      新增工作內容
+    </h2>
+
+
+    <div class="group">
+
+      <label>
+        📅 日期（留空使用今天）
+      </label>
+
+      <input
+        type="date"
+        id="dateInput"
+      >
+
+    </div>
+
+
+    <div class="group">
+
+      <label>
+        📝 工作標題（與工作內容擇一填寫）
+      </label>
+
+      <input
+        id="titleInput"
+        placeholder="例如：車輛驗車安排"
+      >
+
+    </div>
+
+
+    <div class="group">
+
+      <label>
+        🏷️ 工作分類
+      </label>
+
+      <select id="categoryInput">
+
+        <option>驗車</option>
+        <option>eTAG</option>
+        <option>加油卡</option>
+        <option>罰單</option>
+        <option>保險</option>
+        <option>新購車</option>
+        <option>新租賃</option>
+        <option>報廢</option>
+        <option>停車費</option>
+        <option>里程</option>
+        <option>其他</option>
+
+      </select>
+
+    </div>
+
+
+    <div class="group">
+      <label for="statusInput">🚦 工作進度</label>
+      <select id="statusInput">
+        <option value="未處理">未處理</option>
+        <option value="處理中">處理中</option>
+        <option value="已完成">已完成</option>
+      </select>
+    </div>
+
+    <fieldset id="parkingWorkflowInput" class="parking-workflow" hidden>
+      <legend id="workflowInputLegend">工作流程</legend>
+      <div id="workflowInputSteps"></div>
+      <p class="parking-help">全部步驟勾選後，工作進度會自動改為「已完成」。</p>
+    </fieldset>
+
+    <div class="group">
+
+      <label>
+        📋 工作內容（與標題擇一填寫）
+      </label>
+
+      <textarea
+        id="contentInput"
+        placeholder="記錄今天完成的工作..."
+      ></textarea>
+
+    </div>
+
+
+    <div class="modal-actions">
+
+      <button
+        class="btn secondary"
+        id="cancelModalBtn"
+      >
+        取消
+      </button>
+
+
+      <button
+        class="btn primary"
+        id="saveBtn"
+      >
+        儲存紀錄
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================
+     Supabase
+========================= -->
+
+<script src="/local-client.js"></script>
+
+
+<script>
+
+
+/* =========================================================
+   Supabase 設定
+========================================================= */
+
+const supabaseClient = window.supabase.createClient();
+
+/* =========================================================
+   全域變數
+========================================================= */
+
+let works = [];
+
+let editingId = null;
+
+let currentUser = null;
+
+let selectedStatus = "";
+let pendingNoticeShownForUser = null;
+let pendingPreviousOverflow = "";
+
+const PARKING_STEPS = ["線上查詢是否未繳停車費","鉛筆寫上 姓名 單位地點","停車單正本繳交佩君"];
+const FINE_STEPS = ["掃描罰單","寄Mail給當地行政(附上掃描罰單檔案)，詢問是否本人行駛","確認後罰單上傳 EIP","鉛筆寫上 姓名 單位地點","罰單正本繳交佩君"];
+const FINE_COLUMNS = ["fine_scanned", "fine_emailed_admin", "fine_uploaded_eip", "fine_written_details", "fine_submitted_original"];
+
+const INSURANCE_STEPS = ["掃描正本","掃描檔放 信榕&怡蒨 資料夾","保險上傳 EIP","正本給芷婷","收據給怡蒨"];
+const INSURANCE_COLUMNS = ["insurance_scanned", "insurance_saved_folder", "insurance_uploaded_eip", "insurance_original_delivered", "insurance_receipt_delivered"];
+
+function workflowSteps(category){
+  return category === "停車費" ? PARKING_STEPS
+    : category === "罰單" ? FINE_STEPS
+    : category === "保險" ? INSURANCE_STEPS : [];
+}
+
+function normalizeWorkflowSteps(category, steps){
+  return workflowSteps(category).map((_, index) => steps?.[index] === true);
+}
+
+function workflowValues(item){
+  return normalizeWorkflowSteps(item.category,
+    item.category === "保險" ? item.insuranceWorkflow
+      : item.category === "罰單" ? item.fineWorkflow : item.parkingWorkflow);
+}
+
+function workflowStepStatus(category, steps){
+  const checked = normalizeWorkflowSteps(category, steps);
+  return checked.length && checked.every(Boolean) ? "已完成"
+    : checked.some(Boolean) ? "處理中" : "未處理";
+}
+
+function finePayload(steps){
+  const checked = normalizeWorkflowSteps("罰單", steps);
+  return Object.fromEntries(FINE_COLUMNS.map((column, index) => [column, checked[index]]));
+}
+
+function insurancePayload(steps){
+  const checked = normalizeWorkflowSteps("保險", steps);
+  return Object.fromEntries(INSURANCE_COLUMNS.map((column, index) => [column, checked[index]]));
+}
+
+function workflowPayload(category, steps){
+  return category === "保險" ? insurancePayload(steps)
+    : category === "罰單" ? finePayload(steps) : parkingPayload(steps);
+}
+
+const parkingPendingIds = new Set();
+const parkingUnlockedIds = new Set();
+
+function normalizeParkingSteps(steps){
+  return PARKING_STEPS.map((_, index) => steps?.[index] === true);
+}
+
+function parkingStepStatus(steps){
+  const checked = normalizeParkingSteps(steps);
+  return checked.every(Boolean) ? "已完成"
+    : checked.some(Boolean) ? "處理中" : "未處理";
+}
+
+function parkingPayload(steps){
+  const checked = normalizeParkingSteps(steps);
+  return {
+    parking_checked_online:checked[0],
+    parking_written_details:checked[1],
+    parking_submitted_original:checked[2]
+  };
+}
+
+const WORK_STATUSES = ["未處理", "處理中", "已完成"];
+
+function normalizeStatus(value){
+  return WORK_STATUSES.includes(value) ? value : "未處理";
+}
+
+
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const authScreen =
+  document.getElementById("authScreen");
+
+const app =
+  document.getElementById("app");
+
+const authEmail =
+  document.getElementById("authEmail");
+
+const authPassword =
+  document.getElementById("authPassword");
+
+const authMessage =
+  document.getElementById("authMessage");
+
+const loginBtn =
+  document.getElementById("loginBtn");
+
+const registerBtn =
+  document.getElementById("registerBtn");
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+const userEmail =
+  document.getElementById("userEmail");
+
+const searchInput =
+  document.getElementById("searchInput");
+
+const searchCategory =
+  document.getElementById("searchCategory");
+
+const searchDate =
+  document.getElementById("searchDate");
+
+const content =
+  document.getElementById("content");
+
+const todayText =
+  document.getElementById("todayText");
+
+const modalBg =
+  document.getElementById("modalBg");
+
+const modalTitle =
+  document.getElementById("modalTitle");
+
+const dateInput =
+  document.getElementById("dateInput");
+
+const titleInput =
+  document.getElementById("titleInput");
+
+const categoryInput =
+  document.getElementById("categoryInput");
+
+const statusInput = document.getElementById("statusInput");
+const parkingWorkflowInput = document.getElementById("parkingWorkflowInput");
+
+let modalWorkflowCategory = null;
+let modalWorkflowDrafts = {};
+
+function modalWorkflowSteps(){
+  return [...parkingWorkflowInput.querySelectorAll("input[type=checkbox]")]
+    .map(input => input.checked);
+}
+
+function modalParkingSteps(){
+  return categoryInput.value === "停車費"
+    ? modalWorkflowSteps() : normalizeParkingSteps(modalWorkflowDrafts["停車費"]);
+}
+
+function modalFineSteps(){
+  return categoryInput.value === "罰單"
+    ? modalWorkflowSteps() : normalizeWorkflowSteps("罰單", modalWorkflowDrafts["罰單"]);
+}
+
+function modalInsuranceSteps(){
+  return categoryInput.value === "保險"
+    ? modalWorkflowSteps() : normalizeWorkflowSteps("保險", modalWorkflowDrafts["保險"]);
+}
+
+function setModalInsuranceSteps(steps){
+  modalWorkflowDrafts["保險"] = normalizeWorkflowSteps("保險", steps);
+}
+
+function setModalParkingSteps(steps){
+  modalWorkflowDrafts["停車費"] = normalizeParkingSteps(steps);
+}
+
+function setModalFineSteps(steps){
+  modalWorkflowDrafts["罰單"] = normalizeWorkflowSteps("罰單", steps);
+}
+
+function updateParkingVisibility(){
+  if(modalWorkflowCategory){
+    modalWorkflowDrafts[modalWorkflowCategory] = modalWorkflowSteps();
+  }
+  const category = categoryInput.value;
+  const steps = workflowSteps(category);
+  parkingWorkflowInput.hidden = steps.length === 0;
+  modalWorkflowCategory = steps.length ? category : null;
+  if(!steps.length) return;
+  const checked = normalizeWorkflowSteps(category, modalWorkflowDrafts[category]);
+  document.getElementById("workflowInputLegend").textContent = category + "工作流程";
+  document.getElementById("workflowInputSteps").innerHTML = steps.map((step, index) =>
+    `<label class="parking-step"><input type="checkbox" data-modal-workflow-step="${index}" ${checked[index] ? "checked" : ""}><span>${index + 1}. ${esc(step)}</span></label>`
+  ).join("");
+  if(checked.every(Boolean)) statusInput.value = "已完成";
+}
+
+const contentInput =
+  document.getElementById("contentInput");
+
+const importBtn =
+  document.getElementById("importBtn");
+
+
+
+/* =========================================================
+   日期
+========================================================= */
+
+function getToday(){
+
+  const d = new Date();
+
+  return `${d.getFullYear()}-${String(
+    d.getMonth()+1
+  ).padStart(2,"0")}-${String(
+    d.getDate()
+  ).padStart(2,"0")}`;
+
+}
+
+
+
+function updateToday(){
+
+  const d = new Date();
+
+  const week = [
+    "日",
+    "一",
+    "二",
+    "三",
+    "四",
+    "五",
+    "六"
+  ];
+
+  todayText.textContent =
+    `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日 ・ 星期${week[d.getDay()]}`;
+
+}
+
+
+
+/* =========================================================
+   Escape HTML
+========================================================= */
+
+function esc(value=""){
+
+  return String(value).replace(
+    /[&<>"']/g,
+    m => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#039;"
+    }[m])
+  );
+
+}
+
+
+
+/* =========================================================
+   搜尋關鍵字反白
+========================================================= */
+
+function highlight(
+  value="",
+  keyword=""
+){
+
+  const text =
+    esc(value);
+
+  if(!keyword){
+
+    return text;
+
+  }
+
+
+  const escapedKeyword =
+    keyword.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+
+
+  const regex =
+    new RegExp(
+      `(${escapedKeyword})`,
+      "gi"
+    );
+
+
+  return text.replace(
+    regex,
+    '<mark class="keyword-highlight">$1</mark>'
+  );
+
+}
+
+
+
+/* =========================================================
+   日期格式
+========================================================= */
+
+function formatDate(value){
+
+  const d =
+    new Date(value + "T00:00:00");
+
+  const week = [
+    "日",
+    "一",
+    "二",
+    "三",
+    "四",
+    "五",
+    "六"
+  ];
+
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} 星期${week[d.getDay()]}`;
+
+}
+
+
+
+/* =========================================================
+   登入訊息
+========================================================= */
+
+function showAuthMessage(
+  message,
+  type=""
+){
+
+  authMessage.textContent =
+    message;
+
+  authMessage.className =
+    "auth-message " + type;
+
+}
+
+
+
+/* =========================================================
+   登入
+========================================================= */
+
+async function login(){
+
+  const email =
+    authEmail.value.trim();
+
+  const password =
+    authPassword.value;
+
+
+  if(!email || !password){
+
+    showAuthMessage(
+      "請輸入 Email 和密碼",
+      "error"
+    );
+
+    return;
+  }
+
+
+  loginBtn.disabled = true;
+
+  loginBtn.textContent =
+    "登入中...";
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+
+  loginBtn.disabled = false;
+
+  loginBtn.textContent =
+    "登入";
+
+
+  if(error){
+
+    showAuthMessage(
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  if(data.user){
+
+    showAuthMessage(
+      "登入成功",
+      "success"
+    );
+
+    await showApp(
+      data.user
+    );
+
+  }
+
+}
+
+
+
+/* =========================================================
+   建立帳號
+========================================================= */
+
+async function register(){
+
+  const email =
+    authEmail.value.trim();
+
+  const password =
+    authPassword.value;
+
+
+  if(!email || !password){
+
+    showAuthMessage(
+      "請輸入 Email 和密碼",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if(password.length < 6){
+
+    showAuthMessage(
+      "密碼至少需要 6 個字元",
+      "error"
+    );
+
+    return;
+  }
+
+
+  registerBtn.disabled = true;
+
+  registerBtn.textContent =
+    "建立中...";
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth.signUp({
+
+      email,
+      password,
+
+      options:{
+        emailRedirectTo:
+          "https://dung-yi.github.io/Work/"
+      }
+
+    });
+
+
+  registerBtn.disabled = false;
+
+  registerBtn.textContent =
+    "建立帳號";
+
+
+  if(error){
+
+    showAuthMessage(
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  if(data.session){
+
+    showAuthMessage(
+      "帳號建立成功，已登入",
+      "success"
+    );
+
+    await showApp(
+      data.user
+    );
+
+  }else{
+
+    showAuthMessage(
+      "帳號建立成功！請到 Email 收驗證信，再回來登入。",
+      "success"
+    );
+
+  }
+
+}
+
+
+
+/* =========================================================
+   登出
+========================================================= */
+
+async function logout(){
+
+  closePendingNotice(false);
+  pendingNoticeShownForUser = null;
+
+  const {
+    error
+  } =
+    await supabaseClient.auth.signOut();
+
+
+  if(error){
+
+    alert(
+      "登出失敗：" +
+      error.message
+    );
+
+    return;
+  }
+
+
+  works = [];
+
+  currentUser = null;
+
+  app.style.display =
+    "none";
+
+  authScreen.style.display =
+    "flex";
+
+  authPassword.value =
+    "";
+
+}
+
+
+
+/* =========================================================
+   顯示主畫面
+========================================================= */
+
+async function showApp(user){
+
+  currentUser = user;
+
+  authScreen.style.display =
+    "none";
+
+  app.style.display =
+    "block";
+
+  userEmail.textContent =
+    user.email || "";
+
+  updateToday();
+
+  await loadWorks();
+
+  checkLocalData();
+
+}
+
+
+
+/* =========================================================
+   載入雲端資料
+========================================================= */
+
+async function loadWorks(){
+
+  content.innerHTML = `
+    <div class="loading">
+
+      <div class="spinner"></div>
+
+      正在載入主機工作紀錄...
+
+    </div>
+  `;
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("work_diary")
+      .select("*")
+      .order(
+        "work_date",
+        {
+          ascending:false
+        }
+      )
+      .order(
+        "created_at",
+        {
+          ascending:false
+        }
+      );
+
+
+  if(error){
+
+    console.error(error);
+
+    content.innerHTML = `
+
+      <div class="empty">
+
+        <div class="icon">
+          ⚠️
+        </div>
+
+        <div>
+          載入資料失敗
+        </div>
+
+        <div style="margin-top:8px;font-size:13px;">
+          ${esc(error.message)}
+        </div>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  works =
+    (data || []).map(
+      item => ({
+
+        id:item.id,
+
+        date:item.work_date,
+
+        title:item.title,
+
+        category:item.category,
+
+        status:normalizeStatus(item.status),
+
+        parkingWorkflow:[
+          item.parking_checked_online === true,
+          item.parking_written_details === true,
+          item.parking_submitted_original === true
+        ],
+
+        fineWorkflow:FINE_COLUMNS.map(column => item[column] === true),
+
+        insuranceWorkflow:INSURANCE_COLUMNS.map(column => item[column] === true),
+
+        content:item.content,
+
+        createdAt:item.created_at
+
+      })
+    );
+
+
+  render();
+  showPendingNoticeOnce();
+
+}
+
+
+
+/* =========================================================
+   Local Storage 舊資料檢查
+========================================================= */
+
+function checkLocalData(){
+
+  try{
+
+    const oldData =
+      JSON.parse(
+        localStorage.getItem("workDiary") || "[]"
+      );
+
+
+    if(
+      Array.isArray(oldData) &&
+      oldData.length > 0
+    ){
+
+      importBtn.style.display =
+        "block";
+
+      importBtn.textContent =
+        `☁️ 匯入舊資料 (${oldData.length})`;
+
+    }else{
+
+      importBtn.style.display =
+        "none";
+
+    }
+
+  }catch(error){
+
+    console.error(error);
+
+    importBtn.style.display =
+      "none";
+
+  }
+
+}
+
+
+
+/* =========================================================
+   匯入舊資料
+========================================================= */
+
+async function importOldData(){
+
+  if(!currentUser){
+
+    return;
+
+  }
+
+
+  let oldData = [];
+
+
+  try{
+
+    oldData =
+      JSON.parse(
+        localStorage.getItem("workDiary") || "[]"
+      );
+
+  }catch(error){
+
+    alert(
+      "讀取舊資料失敗"
+    );
+
+    return;
+
+  }
+
+
+  if(
+    !Array.isArray(oldData) ||
+    oldData.length === 0
+  ){
+
+    alert(
+      "沒有找到舊的工作紀錄"
+    );
+
+    return;
+
+  }
+
+
+  const ok =
+    confirm(
+      `找到 ${oldData.length} 筆舊工作紀錄。\n\n要把它們匯入本機版嗎？`
+    );
+
+
+  if(!ok){
+
+    return;
+
+  }
+
+
+  importBtn.disabled = true;
+
+  importBtn.textContent =
+    "匯入中...";
+
+
+  const rows =
+    oldData
+      .filter(
+        x =>
+          x.date &&
+          x.title &&
+          x.content
+      )
+      .map(
+        x => ({
+
+          user_id:
+            currentUser.id,
+
+          work_date:
+            x.date,
+
+          title:
+            x.title,
+
+          category:
+            x.category || "其他",
+
+          content:
+            x.content
+
+        })
+      );
+
+
+  if(rows.length === 0){
+
+    alert(
+      "舊資料沒有符合格式的紀錄。"
+    );
+
+    importBtn.disabled = false;
+
+    checkLocalData();
+
+    return;
+
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("work_diary")
+      .insert(rows);
+
+
+  if(error){
+
+    console.error(error);
+
+    alert(
+      "匯入失敗：\n" +
+      error.message
+    );
+
+    importBtn.disabled = false;
+
+    checkLocalData();
+
+    return;
+
+  }
+
+
+  alert(
+    `成功匯入 ${rows.length} 筆工作紀錄！`
+  );
+
+
+  localStorage.removeItem(
+    "workDiary"
+  );
+
+
+  importBtn.style.display =
+    "none";
+
+
+  await loadWorks();
+
+}
+
+
+
+/* =========================================================
+   開啟新增 / 編輯
+========================================================= */
+
+function openModal(id=null){
+
+  modalWorkflowCategory = null;
+  modalWorkflowDrafts = {};
+
+  editingId = id;
+
+
+  if(id !== null){
+
+    const item =
+      works.find(
+        x =>
+          String(x.id) ===
+          String(id)
+      );
+
+
+    if(!item){
+
+      alert(
+        "找不到這筆工作紀錄"
+      );
+
+      return;
+
+    }
+
+
+    modalTitle.textContent =
+      "編輯工作內容";
+
+
+    dateInput.value =
+      item.date || getToday();
+
+
+    titleInput.value =
+      item.title || "";
+
+
+    categoryInput.value =
+      item.category || "其他";
+
+    statusInput.value = normalizeStatus(item.status);
+    setModalParkingSteps(item.parkingWorkflow);
+    setModalFineSteps(item.fineWorkflow);
+    setModalInsuranceSteps(item.insuranceWorkflow);
+
+
+    contentInput.value =
+      item.content || "";
+
+
+  }else{
+
+    modalTitle.textContent =
+      "新增工作內容";
+
+
+    dateInput.value =
+      getToday();
+
+
+    titleInput.value =
+      "";
+
+
+    categoryInput.value =
+      "驗車";
+
+    statusInput.value = "未處理";
+    setModalParkingSteps([false, false, false]);
+    setModalFineSteps([false, false, false, false, false]);
+    setModalInsuranceSteps([false, false, false, false, false]);
+
+
+    contentInput.value =
+      "";
+
+  }
+
+
+  updateParkingVisibility();
+
+  modalBg.classList.add(
+    "show"
+  );
+
+}
+
+
+
+/* =========================================================
+   關閉 Modal
+========================================================= */
+
+function closeModal(){
+
+  modalBg.classList.remove(
+    "show"
+  );
+
+  editingId = null;
+
+}
+
+
+
+/* =========================================================
+   儲存工作
+========================================================= */
+
+async function saveWork(){
+
+  if(!currentUser){
+
+    alert(
+      "請先登入"
+    );
+
+    return;
+
+  }
+
+
+  const workDate =
+    dateInput.value || getToday();
+
+  const title =
+    titleInput.value.trim();
+
+  const category =
+    categoryInput.value;
+
+  const parkingSteps = category === "停車費"
+    ? modalParkingSteps() : [false, false, false];
+
+  const fineSteps = category === "罰單"
+    ? modalFineSteps() : FINE_STEPS.map(() => false);
+
+  const insuranceSteps = category === "保險"
+    ? modalInsuranceSteps() : INSURANCE_STEPS.map(() => false);
+
+  const activeSteps = category === "保險" ? insuranceSteps
+    : category === "罰單" ? fineSteps : parkingSteps;
+  const status = workflowSteps(category).length && activeSteps.every(Boolean)
+    ? "已完成" : normalizeStatus(statusInput.value);
+
+  const workContent =
+    contentInput.value.trim();
+
+
+  if(!title && !workContent){
+
+    alert(
+      "工作標題或工作內容，至少填寫一項即可"
+    );
+
+    return;
+
+  }
+
+
+  const saveBtn =
+    document.getElementById(
+      "saveBtn"
+    );
+
+
+  saveBtn.disabled = true;
+
+  saveBtn.textContent =
+    "儲存中...";
+
+
+  let error = null;
+
+
+  if(editingId !== null){
+
+    const result =
+      await supabaseClient
+        .from("work_diary")
+        .update({
+
+          work_date:
+            workDate,
+
+          title:
+            title,
+
+          category:
+            category,
+
+          status:
+            status,
+
+          ...parkingPayload(parkingSteps),
+          ...finePayload(fineSteps),
+          ...insurancePayload(insuranceSteps),
+
+          content:
+            workContent
+
+        })
+        .eq(
+          "id",
+          editingId
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        );
+
+
+    error =
+      result.error;
+
+
+  }else{
+
+    const result =
+      await supabaseClient
+        .from("work_diary")
+        .insert({
+
+          user_id:
+            currentUser.id,
+
+          work_date:
+            workDate,
+
+          title:
+            title,
+
+          category:
+            category,
+
+          status:
+            status,
+
+          ...parkingPayload(parkingSteps),
+          ...finePayload(fineSteps),
+          ...insurancePayload(insuranceSteps),
+
+          content:
+            workContent
+
+        });
+
+
+    error =
+      result.error;
+
+  }
+
+
+  saveBtn.disabled = false;
+
+  saveBtn.textContent =
+    "儲存紀錄";
+
+
+  if(error){
+
+    console.error(error);
+
+    alert(
+      "儲存失敗：\n" +
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  closeModal();
+
+  await loadWorks();
+
+}
+
+
+
+/* =========================================================
+   刪除
+========================================================= */
+
+async function deleteWork(id){
+
+  if(!currentUser){
+
+    return;
+
+  }
+
+
+  const ok =
+    confirm(
+      "確定要刪除這筆紀錄嗎？"
+    );
+
+
+  if(!ok){
+
+    return;
+
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("work_diary")
+      .delete()
+      .eq(
+        "id",
+        id
+      )
+      .eq(
+        "user_id",
+        currentUser.id
+      );
+
+
+  if(error){
+
+    console.error(error);
+
+    alert(
+      "刪除失敗：\n" +
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  await loadWorks();
+
+}
+
+
+
+/* =========================================================
+   今天
+========================================================= */
+
+function showToday(){
+  searchDate.value = getToday();
+  render();
+}
+
+
+
+/* =========================================================
+   清除搜尋
+========================================================= */
+
+function clearSearch(){
+
+  selectedStatus = "";
+
+  searchInput.value =
+    "";
+
+  searchCategory.value =
+    "";
+
+  searchDate.value =
+    "";
+
+  render();
+
+}
+
+
+
+/* =========================================================
+   Render
+========================================================= */
+
+function render(options = {}){
+  if(options.preserveWorkflowUnlocks !== true){
+    parkingUnlockedIds.clear();
+  }
+
+  const keyword =
+    searchInput.value.trim();
+
+  const q =
+    keyword.toLowerCase();
+
+
+  const selectedCategory =
+    searchCategory.value;
+
+
+  const selectedDate =
+    searchDate.value;
+
+  const isSearching =
+    Boolean(keyword || selectedCategory || selectedDate || selectedStatus);
+
+
+  const filtered =
+    works.filter(
+      item => {
+
+        if(selectedStatus && normalizeStatus(item.status) !== selectedStatus){
+          return false;
+        }
+
+        /* -------------------------
+           分類篩選
+        ------------------------- */
+
+        if(
+          selectedCategory &&
+          item.category !==
+            selectedCategory
+        ){
+
+          return false;
+
+        }
+
+
+        /* -------------------------
+           日期篩選
+        ------------------------- */
+
+        if(
+          selectedDate &&
+          item.date !==
+            selectedDate
+        ){
+
+          return false;
+
+        }
+
+
+        /* -------------------------
+           沒有關鍵字
+        ------------------------- */
+
+        if(!q){
+
+          return true;
+
+        }
+
+
+        /* -------------------------
+           關鍵字搜尋
+        ------------------------- */
+
+        return [
+
+          item.date,
+
+          item.title,
+
+          item.category,
+
+          item.content
+
+        ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+
+      }
+    );
+
+
+  document.querySelectorAll("[data-status-filter]").forEach(button => {
+    const status = button.dataset.statusFilter;
+    button.setAttribute("aria-pressed", String(status === selectedStatus));
+    button.querySelector(".status-count").textContent = status
+      ? works.filter(item => normalizeStatus(item.status) === status).length
+      : works.length;
+  });
+
+  /* =========================
+     沒有結果
+  ========================= */
+
+  if(filtered.length === 0){
+
+    let emptyText =
+      "目前還沒有工作紀錄，按「新增工作內容」開始吧！";
+
+
+    if(
+      keyword ||
+      selectedCategory ||
+      selectedDate ||
+      selectedStatus
+    ){
+
+      emptyText =
+        "找不到符合的工作紀錄";
+
+    }
+
+
+    content.innerHTML = `
+
+      <div class="empty">
+
+        <div class="icon">
+          📭
+        </div>
+
+        ${emptyText}
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+
+  /* =========================
+     依日期分組
+  ========================= */
+
+  const groups = {};
+
+
+  filtered.forEach(
+    item => {
+
+      if(!groups[item.date]){
+
+        groups[item.date] = [];
+
+      }
+
+      groups[item.date].push(
+        item
+      );
+
+    }
+  );
+
+
+  let html = "";
+
+
+  const sortedDates =
+    Object.keys(groups).sort((a,b) => b.localeCompare(a));
+
+  sortedDates.forEach(
+      (date, dateIndex) => {
+
+        html += `
+
+          <section class="date-section">
+            <button type="button" class="date-head" data-date-toggle
+              aria-expanded="${isSearching || dateIndex === 0}"
+              title="點選展開或收合當日全部紀錄">
+              <span class="date-summary">
+                <span class="date-heading">
+                  <span class="date-label">📅 ${formatDate(date)}</span>
+                  <span class="badge">${groups[date].length} 筆</span>
+                </span>
+              </span>
+            </button>
+
+        `;
+
+
+        groups[date].forEach(
+          item => {
+
+            let createdText =
+              "";
+
+
+            if(item.createdAt){
+
+              try{
+
+                createdText =
+                  new Date(
+                    item.createdAt
+                  ).toLocaleString(
+                    "zh-TW",
+                    {
+                      month:"numeric",
+                      day:"numeric",
+                      hour:"2-digit",
+                      minute:"2-digit"
+                    }
+                  );
+
+              }catch(error){
+
+                createdText =
+                  "";
+
+              }
+
+            }
+
+
+            html += `
+
+              <details class="card work-entry" data-work-id="${esc(String(item.id))}" ${isSearching || dateIndex === 0 ? "open" : ""}>
+                <summary class="entry-head" title="點選標題展開或收合內容">
+                  <span class="tag status-tag" data-status="${normalizeStatus(item.status)}">${normalizeStatus(item.status)}</span>
+                  <span class="entry-text">
+                    <span class="entry-title">${highlight(item.title || "未填標題", keyword)}</span><span class="entry-labels">
+                      <span class="tag" data-category="${esc(item.category || "其他")}">${highlight(item.category || "其他", keyword)}</span>
+                    </span>
+                  </span>
+                </summary>
+                <div class="entry-content">
+
+
+                <div class="meta">
+
+                  ${
+                    createdText
+                    ? `建立於 ${esc(createdText)}`
+                    : ""
+                  }
+
+                </div>
+
+
+
+
+
+
+
+                ${workflowSteps(item.category).length ? `
+                  <fieldset class="parking-workflow">
+                    <legend>${esc(item.category)}工作流程<span class="parking-progress">${workflowValues(item).filter(Boolean).length} / ${workflowSteps(item.category).length}</span></legend>
+                    <div class="parking-lock-row">
+                      <button type="button" class="parking-lock-button" data-parking-lock
+                        aria-pressed="${parkingUnlockedIds.has(String(item.id))}"
+                        ${parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
+                        ${parkingUnlockedIds.has(String(item.id)) ? "🔒 完成並鎖定" : "🔓 解鎖修改"}
+                      </button>
+                      <span class="parking-lock-hint">${parkingUnlockedIds.has(String(item.id)) ? "修改會即時儲存，完成後請鎖定。" : "已鎖定，先解鎖才能勾選或取消。"}</span>
+                    </div>
+                    ${workflowSteps(item.category).map((step, index) => `
+                      <label class="parking-step">
+                        <input type="checkbox" data-parking-step="${index}"
+                          ${workflowValues(item)[index] ? "checked" : ""}
+                          ${!parkingUnlockedIds.has(String(item.id)) || parkingPendingIds.has(String(item.id)) ? "disabled" : ""}>
+                        <span>${index + 1}. ${esc(step)}</span>
+                      </label>
+                    `).join("")}
+                    <p class="parking-help">勾選後自動儲存，全部完成會自動標為「已完成」。</p>
+                  </fieldset>
+                ` : ""}
+
+                <div class="body">${highlight(item.content, keyword)}</div>
+
+
+
+                <div class="actions">
+
+                  <button
+                    class="btn edit"
+                    onclick="openModal('${String(item.id)}')"
+                  >
+                    ✏️ 編輯
+                  </button>
+
+
+                  <button
+                    class="btn del"
+                    onclick="deleteWork('${String(item.id)}')"
+                  >
+                    🗑️ 刪除
+                  </button>
+
+                </div>
+
+
+                </div>
+              </details>
+
+            `;
+
+          }
+        );
+
+
+        html += `
+
+          </section>
+
+        `;
+
+      }
+    );
+
+
+  content.innerHTML =
+    html;
+
+}
+
+
+
+/* =========================================================
+   Auth 狀態
+========================================================= */
+
+supabaseClient.auth.onAuthStateChange(
+  async (
+    event,
+    session
+  ) => {
+
+    if(session?.user){
+
+      await showApp(
+        session.user
+      );
+
+    }else{
+
+      currentUser =
+        null;
+
+      works = [];
+
+
+      app.style.display =
+        "none";
+
+
+      authScreen.style.display =
+        "flex";
+
+    }
+
+  }
+);
+
+
+
+/* =========================================================
+   初始檢查登入
+========================================================= */
+
+async function init(){
+
+  updateToday();
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient.auth.getSession();
+
+
+  if(error){
+
+    console.error(error);
+
+    showAuthMessage(
+      "讀取登入狀態失敗",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if(data.session?.user){
+
+    await showApp(
+      data.session.user
+    );
+
+  }else{
+
+    authScreen.style.display =
+      "flex";
+
+    app.style.display =
+      "none";
+
+  }
+
+}
+
+
+
+/* =========================================================
+   按鈕事件
+========================================================= */
+
+loginBtn.addEventListener(
+  "click",
+  login
+);
+
+
+registerBtn.addEventListener(
+  "click",
+  register
+);
+
+
+logoutBtn.addEventListener(
+  "click",
+  logout
+);
+
+
+document
+  .getElementById("addBtn")
+  .addEventListener(
+    "click",
+    () =>
+      openModal()
+  );
+
+
+document
+  .getElementById("todayBtn")
+  .addEventListener(
+    "click",
+    showToday
+  );
+
+
+document
+  .getElementById("clearCategoryBtn")
+  .addEventListener(
+    "click",
+    clearSearch
+  );
+
+
+document
+  .getElementById("cancelModalBtn")
+  .addEventListener(
+    "click",
+    closeModal
+  );
+
+
+document
+  .getElementById("saveBtn")
+  .addEventListener(
+    "click",
+    saveWork
+  );
+
+
+importBtn.addEventListener(
+  "click",
+  importOldData
+);
+
+
+/* 關鍵字搜尋 */
+
+searchInput.addEventListener(
+  "input",
+  render
+);
+
+
+/* 分類搜尋 */
+
+searchCategory.addEventListener(
+  "change",
+  render
+);
+
+
+/* 日期搜尋 */
+
+// 搜尋與新增／編輯的日期欄位，點擊任一處都直接開啟日曆。
+[searchDate, dateInput].forEach(dateField => {
+  dateField.addEventListener("click", event => {
+    if(typeof dateField.showPicker === "function"){
+      try{
+        dateField.showPicker();
+        // 避免點擊日曆圖示時，瀏覽器再切換一次開關。
+        event.preventDefault();
+      }catch(error){
+        // 不支援程式開啟日曆時，保留原生日期選擇操作。
+      }
+    }
+  });
+});
+
+searchDate.addEventListener(
+  "change",
+  render
+);
+
+
+/* 點背景關閉 Modal */
+
+modalBg.addEventListener(
+  "click",
+  event => {
+
+    if(
+      event.target ===
+      modalBg
+    ){
+
+      closeModal();
+
+    }
+
+  }
+);
+
+
+/* Enter 登入 */
+
+authPassword.addEventListener(
+  "keydown",
+  event => {
+
+    if(
+      event.key ===
+      "Enter"
+    ){
+
+      login();
+
+    }
+
+  }
+);
+
+
+/* 停車費流程：表單隨分類顯示，首頁勾選即儲存。 */
+
+categoryInput.addEventListener("change", updateParkingVisibility);
+
+parkingWorkflowInput.addEventListener("change", () => {
+  if(workflowSteps(categoryInput.value).length){
+    statusInput.value = workflowStepStatus(categoryInput.value, modalWorkflowSteps());
+  }
+});
+
+function renderKeepingEntryState(){
+  const openEntries = new Map(
+    [...content.querySelectorAll(".work-entry[data-work-id]")]
+      .map(entry => [entry.dataset.workId, entry.open])
+  );
+  const scrollTop = window.scrollY;
+  render({preserveWorkflowUnlocks:true});
+  content.querySelectorAll(".work-entry[data-work-id]").forEach(entry => {
+    if(openEntries.has(entry.dataset.workId)){
+      entry.open = openEntries.get(entry.dataset.workId);
+    }
+  });
+  window.scrollTo({top:scrollTop, behavior:"instant"});
+}
+
+function refreshParkingLock(entry){
+  const id = entry.dataset.workId;
+  const unlocked = parkingUnlockedIds.has(id);
+  const pending = parkingPendingIds.has(id);
+  entry.querySelectorAll("[data-parking-step]").forEach(input => {
+    input.disabled = !unlocked || pending;
+  });
+  const button = entry.querySelector("[data-parking-lock]");
+  if(button){
+    button.disabled = pending;
+    button.setAttribute("aria-pressed", String(unlocked));
+    button.textContent = unlocked ? "🔒 完成並鎖定" : "🔓 解鎖修改";
+  }
+  const hint = entry.querySelector(".parking-lock-hint");
+  if(hint) hint.textContent = unlocked
+    ? "修改會即時儲存，完成後請鎖定。"
+    : "已鎖定，先解鎖才能勾選或取消。";
+}
+
+content.addEventListener("click", event => {
+  const button = event.target.closest("[data-parking-lock]");
+  if(!button) return;
+  const entry = button.closest(".work-entry");
+  const id = entry.dataset.workId;
+  if(parkingPendingIds.has(id)) return;
+  if(parkingUnlockedIds.has(id)) parkingUnlockedIds.delete(id);
+  else parkingUnlockedIds.add(id);
+  refreshParkingLock(entry);
+});
+
+content.addEventListener("toggle", event => {
+  const entry = event.target;
+  if(entry.matches(".work-entry") && !entry.open){
+    parkingUnlockedIds.delete(entry.dataset.workId);
+    refreshParkingLock(entry);
+  }
+}, true);
+
+content.addEventListener("change", async event => {
+  const checkbox = event.target.closest("[data-parking-step]");
+  if(!checkbox || !currentUser) return;
+  const entry = checkbox.closest(".work-entry");
+  const id = entry.dataset.workId;
+  const item = works.find(work => String(work.id) === id);
+  if(!item || !workflowSteps(item.category).length || parkingPendingIds.has(id)) return;
+
+  if(!parkingUnlockedIds.has(id)){
+    checkbox.checked = workflowValues(item)[Number(checkbox.dataset.parkingStep)] || false;
+    refreshParkingLock(entry);
+    return;
+  }
+
+  const previousSteps = workflowValues(item);
+  const nextSteps = [...previousSteps];
+  const index = Number(checkbox.dataset.parkingStep);
+  if(!Number.isInteger(index) || index < 0 || index >= workflowSteps(item.category).length) return;
+  nextSteps[index] = checkbox.checked;
+  const nextStatus = workflowStepStatus(item.category, nextSteps);
+  const savingUserId = currentUser.id;
+
+  parkingPendingIds.add(id);
+  refreshParkingLock(entry);
+
+  let saveError = null;
+  try{
+    const {error} = await supabaseClient.from("work_diary")
+      .update({...workflowPayload(item.category, nextSteps), status:nextStatus})
+      .eq("id", item.id)
+      .eq("user_id", savingUserId)
+      .select("id")
+      .single();
+    if(error) throw error;
+    if(currentUser?.id === savingUserId){
+      if(item.category === "保險") item.insuranceWorkflow = nextSteps;
+      else if(item.category === "罰單") item.fineWorkflow = nextSteps;
+      else item.parkingWorkflow = nextSteps;
+      item.status = nextStatus;
+      if(nextStatus === "已完成") parkingUnlockedIds.delete(id);
+    }
+  }catch(error){
+    saveError = error;
+    parkingUnlockedIds.delete(id);
+  }finally{
+    parkingPendingIds.delete(id);
+    if(currentUser?.id === savingUserId){
+      renderKeepingEntryState();
+      const input = [...content.querySelectorAll(".work-entry[data-work-id]")]
+        .find(row => row.dataset.workId === id)
+        ?.querySelector('[data-parking-step="' + index + '"]');
+      input?.focus({preventScroll:true});
+    }
+  }
+  if(saveError){
+    alert("流程儲存失敗，已還原勾選狀態：\n" + (saveError.message || "請稍後再試"));
+  }
+});
+
+
+/* 每次開啟或重新整理後，登入並載入成功時提醒一次。 */
+
+const pendingNoticeBg = document.getElementById("pendingNoticeBg");
+const pendingNoticeList = document.getElementById("pendingNoticeList");
+const pendingNoticeClose = document.getElementById("pendingNoticeClose");
+
+function showPendingNoticeOnce(){
+  if(!currentUser || pendingNoticeShownForUser === currentUser.id) return;
+  pendingNoticeShownForUser = currentUser.id;
+  const pendingItems = works.filter(item => normalizeStatus(item.status) === "未處理");
+  if(!pendingItems.length) return;
+  document.getElementById("pendingNoticeTitle").textContent =
+    "📋 " + pendingItems.length + " 項未處理事項";
+  document.getElementById("pendingNoticeDescription").textContent =
+    "點選事項可直接查看內容，也可以稍後再處理。";
+  pendingNoticeList.innerHTML = pendingItems.map(item => `
+    <button type="button" class="pending-item" data-pending-id="${esc(String(item.id))}">
+      <span class="pending-item-title">${esc(item.title || "未填標題")}</span>
+      <span class="pending-item-meta">
+        <span>📅 ${esc(item.date ? formatDate(item.date) : "未填日期")}</span>
+        <span class="tag" data-category="${esc(item.category || "其他")}">${esc(item.category || "其他")}</span>
+        <span class="tag status-tag" data-status="未處理">未處理</span>
+      </span>
+    </button>
+  `).join("");
+  pendingPreviousOverflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
+  pendingNoticeBg.classList.add("show");
+  pendingNoticeClose.focus();
+}
+
+function closePendingNotice(restoreFocus = true){
+  if(!pendingNoticeBg.classList.contains("show")) return;
+  pendingNoticeBg.classList.remove("show");
+  document.body.style.overflow = pendingPreviousOverflow;
+  if(restoreFocus) document.getElementById("addBtn").focus({preventScroll:true});
+}
+
+function viewPendingItems(id = null){
+  closePendingNotice(false);
+  selectedStatus = "未處理";
+  searchInput.value = "";
+  searchCategory.value = "";
+  searchDate.value = "";
+  render();
+  const entry = id === null ? null
+    : [...content.querySelectorAll(".work-entry[data-work-id]")]
+      .find(row => row.dataset.workId === id);
+  if(entry){
+    entry.open = true;
+    entry.scrollIntoView({
+      behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+      block:"center"
+    });
+    entry.querySelector(".entry-head")?.focus({preventScroll:true});
+  }else{
+    document.querySelector('[data-status-filter="未處理"]').focus({preventScroll:true});
+  }
+}
+
+pendingNoticeClose.addEventListener("click", () => closePendingNotice());
+document.getElementById("pendingNoticeLater").addEventListener("click", () => closePendingNotice());
+document.getElementById("pendingNoticeViewAll").addEventListener("click", () => viewPendingItems());
+pendingNoticeList.addEventListener("click", event => {
+  const button = event.target.closest("[data-pending-id]");
+  if(button) viewPendingItems(button.dataset.pendingId);
+});
+pendingNoticeBg.addEventListener("click", event => {
+  if(event.target === pendingNoticeBg) closePendingNotice();
+});
+document.addEventListener("keydown", event => {
+  if(!pendingNoticeBg.classList.contains("show")) return;
+  if(event.key === "Escape"){
+    event.preventDefault();
+    closePendingNotice();
+  }else if(event.key === "Tab"){
+    const buttons = [...pendingNoticeBg.querySelectorAll("button:not([disabled])")];
+    const first = buttons[0], last = buttons[buttons.length - 1];
+    if(event.shiftKey && document.activeElement === first){
+      event.preventDefault();
+      last.focus();
+    }else if(!event.shiftKey && document.activeElement === last){
+      event.preventDefault();
+      first.focus();
+    }
+  }
+});
+
+
+/* 工作進度篩選，可與關鍵字、分類及日期條件一起使用。 */
+
+document.querySelector(".status-menu").addEventListener("click", event => {
+  const button = event.target.closest("[data-status-filter]");
+  if(!button) return;
+  selectedStatus = button.dataset.statusFilter;
+  render();
+});
+
+
+/* 日期控制整天展開／收合，標題則獨立控制單筆紀錄。 */
+
+content.addEventListener("click", event => {
+  const button = event.target.closest("[data-date-toggle]");
+  if(!button || !content.contains(button)) return;
+  const section = button.closest(".date-section");
+  const entries = [...section.querySelectorAll(".work-entry")];
+  const shouldOpen = !entries.some(entry => entry.open);
+  entries.forEach(entry => { entry.open = shouldOpen; });
+  button.setAttribute("aria-expanded", String(shouldOpen));
+});
+
+content.addEventListener("toggle", event => {
+  if(!event.target.matches(".work-entry")) return;
+  const section = event.target.closest(".date-section");
+  const anyOpen = [...section.querySelectorAll(".work-entry")]
+    .some(entry => entry.open);
+  section.querySelector("[data-date-toggle]")
+    .setAttribute("aria-expanded", String(anyOpen));
+}, true);
+
+
+/* 返回最上方 */
+
+document.getElementById("backToTopBtn").addEventListener("click", () => {
+  window.scrollTo({
+    top:0,
+    behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "instant"
+      : "smooth"
+  });
+});
+
+
+/* 啟動 */
+
+init();
+
+</script>
+
+</body>
+</html>
+
