@@ -114,7 +114,8 @@ def command(action,package=None):
             raise RuntimeError('已復原上次中斷的更新，請關閉啟動中心，再重新開啟。')
         if action == 'open':
             start_server()
-            webbrowser.open(URL)
+            if not webbrowser.open(URL):
+                raise RuntimeError('主機已啟動，但無法自動開啟瀏覽器。請手動開啟 '+URL)
             return dict(message='主機運行中，可在瀏覽器使用工作日誌。')
         if action == 'stop':
             stop_server()
@@ -150,6 +151,7 @@ def main():
     parser.add_argument('--result')
     parser.add_argument('--shortcut',action='store_true')
     parser.add_argument('--quiet',action='store_true')
+    parser.add_argument('--manage',action='store_true')
     args=parser.parse_args()
     if args.action:
         try:
@@ -181,6 +183,8 @@ def main():
         panel_command.append('--shortcut')
     if args.quiet:
         panel_command.append('--quiet')
+    if args.manage:
+        panel_command.append('--manage')
     process=subprocess.Popen(panel_command,cwd=ROOT)
     process.wait()
     if process.returncode:

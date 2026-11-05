@@ -11,6 +11,7 @@ using System.Windows.Forms;
 class DiaryPanel : Form {
     readonly string root, python;
     readonly bool preview;
+    readonly bool manage;
     Label status;
     List<Button> buttons = new List<Button>();
     Process process;
@@ -18,8 +19,8 @@ class DiaryPanel : Form {
     Timer timer = new Timer();
     JavaScriptSerializer json = new JavaScriptSerializer();
     static string Quote(string s) { return "\""+s+"\""; }
-    public DiaryPanel(string appRoot, string pythonPath, bool isPreview) {
-        root=appRoot; python=pythonPath; preview=isPreview;
+    public DiaryPanel(string appRoot, string pythonPath, bool isPreview, bool isManage) {
+        root=appRoot; python=pythonPath; preview=isPreview; manage=isManage;
         Text="每日工作日誌｜啟動中心"; ClientSize=new Size(530,450);
         StartPosition=FormStartPosition.CenterScreen; FormBorderStyle=FormBorderStyle.FixedDialog;
         MaximizeBox=false; BackColor=Color.FromArgb(241,245,249);
@@ -30,7 +31,7 @@ class DiaryPanel : Form {
         Controls.Add(heading);
         var manifest=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(Path.Combine(root,"manifest.json"),Encoding.UTF8));
         Controls.Add(new Label {Text="本機主機版  v"+manifest["version"],Bounds=new Rectangle(20,108,490,26),TextAlign=ContentAlignment.MiddleCenter});
-        status=new Label {Text="正在準備開啟工作日誌…",Bounds=new Rectangle(22,140,486,48),TextAlign=ContentAlignment.MiddleCenter};
+        status=new Label {Text=manage?"請選擇要使用的管理功能。":"正在準備開啟工作日誌…",Bounds=new Rectangle(22,140,486,48),TextAlign=ContentAlignment.MiddleCenter};
         Controls.Add(status);
         Add("開啟工作日誌",28,202,230,delegate {Run("open",null);},true);
         Add("檢查更新",272,202,230,delegate {Run("check",null);},false);
@@ -43,10 +44,10 @@ class DiaryPanel : Form {
         Add("停止主機",28,326,474,delegate {
             if(MessageBox.Show(this,"停止後，電腦和手機都無法開啟工作日誌。確定停止？","停止主機",MessageBoxButtons.YesNo,MessageBoxIcon.Question)==DialogResult.Yes) Run("stop",null);
         },false);
-        Controls.Add(new Label {Text="關閉啟動中心，主機會繼續運行。\n要結束服務，請按「停止主機」。",
+        Controls.Add(new Label {Text="啟動成功後會自動關閉，主機繼續運行。\n更新、備份或停止主機，請開啟「工作日誌管理」。",
             Bounds=new Rectangle(20,390,490,46),TextAlign=ContentAlignment.MiddleCenter,ForeColor=Color.SlateGray,Font=new Font("Microsoft JhengHei UI",9)});
         timer.Interval=200; timer.Tick+=Poll; timer.Start();
-        Shown+=delegate {Run("open",null);};
+        Shown+=delegate {if(!manage)Run("open",null);};
         FormClosing+=delegate(object sender,FormClosingEventArgs e) {
             if(process!=null) {e.Cancel=true; MessageBox.Show(this,"正在處理，請完成後再關閉。","工作日誌");}
         };
@@ -73,12 +74,14 @@ class DiaryPanel : Form {
     void FinishButtons() {if(process!=null) process.Dispose(); process=null; foreach(Button b in buttons)b.Enabled=true;}
     void Poll(object sender,EventArgs e) {
         if(process==null || !process.HasExited) return;
+        int exitCode=process.ExitCode;
         FinishButtons();
         try {
             var reply=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(resultPath,Encoding.UTF8));
             File.Delete(resultPath);
             string message=Convert.ToString(reply["message"]); status.Text=message;
-            if(!Convert.ToBoolean(reply["ok"])) {MessageBox.Show(this,message,"操作未完成",MessageBoxButtons.OK,MessageBoxIcon.Warning); return;}
+            if(exitCode!=0 || !Convert.ToBoolean(reply["ok"])) {MessageBox.Show(this,message,"操作未完成",MessageBoxButtons.OK,MessageBoxIcon.Warning); return;}
+            if(action=="open" && !manage) {timer.Stop(); Close(); return;}
             if(action=="check" || action=="inspect-file") {
                 if(Convert.ToBoolean(reply["newer"])) {
                     string question="版本 "+reply["version"]+"\n"+reply["notes"]+"\n\n安裝時會先備份並暫停主機。\n請先儲存網頁中的修改。現在更新？";
@@ -91,29 +94,30 @@ class DiaryPanel : Form {
     }
     static void Set(object obj,string key,object value) {obj.GetType().InvokeMember(key,BindingFlags.SetProperty,null,obj,new object[]{value});}
     static object Get(object obj,string key) {return obj.GetType().InvokeMember(key,BindingFlags.GetProperty,null,obj,null);}
-    static void Shortcut(string root,string python) {
-        string path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),"每日工作日誌.lnk");
+    static void Shortcut(string root,string python,bool isManage) {
+        string path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),isManage?"工作日誌管理.lnk":"每日工作日誌.lnk");
         object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));
         object link=shell.GetType().InvokeMember("CreateShortcut",BindingFlags.InvokeMethod,null,shell,new object[]{path});
-        string args=Quote(Path.Combine(root,"launcher.py"));
-        if(File.Exists(path) && Convert.ToString(Get(link,"Arguments"))!=args) throw new Exception("桌面已有另一個同名捷徑，未覆蓋。請先重新命名後再試。");
+        string args=Quote(Path.Combine(root,"launcher.py"))+(isManage?" --manage":"");
+        if(File.Exists(path) && !String.Equals(Convert.ToString(Get(link,"Arguments")),args,StringComparison.OrdinalIgnoreCase)) throw new Exception("桌面已有另一個同名捷徑，未覆蓋。請先重新命名後再試。");
         Set(link,"TargetPath",python); Set(link,"Arguments",args); Set(link,"WorkingDirectory",root);
         Set(link,"IconLocation",Path.Combine(root,"diary.ico")+",0"); Set(link,"Description","啟動每日工作日誌，提供更新、備份與主機管理");
         link.GetType().InvokeMember("Save",BindingFlags.InvokeMethod,null,link,null);
     }
     [STAThread] static int Main(string[] args) {
-        string root=null,python=null; bool preview=false,shortcut=false,quiet=false;
+        string root=null,python=null; bool preview=false,shortcut=false,quiet=false,manage=false;
         for(int i=0;i<args.Length;i++) {
             if(args[i]=="--root") root=args[++i]; else if(args[i]=="--python") python=args[++i];
             else if(args[i]=="--preview") preview=true; else if(args[i]=="--shortcut") shortcut=true; else if(args[i]=="--quiet") quiet=true;
+            else if(args[i]=="--manage") manage=true;
         }
         try {
             if(root==null) root=AppDomain.CurrentDomain.BaseDirectory;
             if(python==null) python=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),".cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\pythonw.exe");
             if(!File.Exists(python)) throw new Exception("請使用桌面捷徑或啟動.cmd 開啟。");
             Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false);
-            if(shortcut) {Shortcut(root,python); if(!quiet)MessageBox.Show("桌面捷徑已建立。","每日工作日誌");}
-            else Application.Run(new DiaryPanel(root,python,preview));
+            if(shortcut) {Shortcut(root,python,false); Shortcut(root,python,true); if(!quiet)MessageBox.Show("桌面捷徑已建立。","每日工作日誌");}
+            else Application.Run(new DiaryPanel(root,python,preview,manage));
             return 0;
         } catch(Exception error) {if(!quiet)MessageBox.Show(error.Message,"每日工作日誌",MessageBoxButtons.OK,MessageBoxIcon.Error); return 1;}
     }
